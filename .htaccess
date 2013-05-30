@@ -1,0 +1,7 @@
+RewriteBase /
+RewriteEngine on
+RewriteRule ^api/create_sprite   server/api.php
+RewriteRule ^api/download_sprite server/api.php
+
+DirectoryIndex index.html
+AddType application/octet-stream .png .jpg .jpeg .zip
