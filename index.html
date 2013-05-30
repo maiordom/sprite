@@ -54,8 +54,11 @@
 
             <div class="canvas-box">
                 <div class="canvas-elements-zone"></div>
-                <i class="canvas-resize icon-resize-full"></i>
-                <div class="canvas-box-fake"></div>
+                <div class="canvas-fake-box">
+                    <div class="canvas-fake-border"></div>
+                    <div class="canvas-fake-params"></div>
+                    <i class="canvas-resize icon-resize-full"></i>
+                </div>
             </div>
 
         </div>
@@ -65,7 +68,7 @@
     <script type="text/template" id="tmpl-css-element">
     <span class="css-element-title"><%= name %></span>
     <span>{</span>
-    <% for ( var key in props ){ %>
+    <% for ( var key in props ) { %>
     <div class="css-element-pair css-element-pair-<%= key %>">
         <span class="css-element-key"><%= key %>:</span>
         <span class="css-element-value"><%= props[key] %>;</span>

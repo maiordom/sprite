@@ -9,6 +9,10 @@
     margin: 0;
 }
 
+.hidden {
+    display: none;
+}
+
 .clearfix:before,
 .clearfix:after {
     display: table;
@@ -168,13 +172,29 @@ BODY {
     overflow: hidden;
 }
 
-.canvas-box-fake {
-    display: none;
+.canvas-fake-box {
     position: absolute;
     top: 0;
     left: 0;
-    border: 1px dashed #000;
     z-index: 4;
+}
+
+.canvas-fake-border {
+    display: none;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    position: absolute;
+    border: 1px dashed #000;
+}
+
+.canvas-fake-params {
+    display: none;
+    position: absolute;
+    right: 8px;
+    bottom: 5px;
+    color: #000;
 }
 
 .canvas-resize:hover {
