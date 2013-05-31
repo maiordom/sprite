@@ -90,10 +90,8 @@ Sprite.View.CanvasElement = Backbone.View.extend({
     initialize: function() {
         var self = this;
         this.model.on( 'dragmove', function() {
-            self.$el.css({
-                left: self.model.get( 'x' ),
-                top:  self.model.get( 'y' )
-            });
+            self.el.style.left = self.model.get( 'x' ) + 'px';
+            self.el.style.top  = self.model.get( 'y' ) + 'px';
         });
     },
 

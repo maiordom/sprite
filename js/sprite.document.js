@@ -25,8 +25,8 @@ Sprite.View.Document = Backbone.View.extend({
     },
 
     cacheObjects: function() {
-        this.InnerCanvas  = new Sprite.View.CanvasInner();
-        this.OuterCanvas  = new Sprite.View.CanvasOuter();
+        this.InnerCanvas  = new Sprite.View.CanvasInner({ model: new Sprite.Model.CanvasInner });
+        this.OuterCanvas  = new Sprite.View.CanvasOuter({ model: new Sprite.Model.CanvasOuter });
         this.win          = $( window );
         this.doc          = $( document );
         this.body         = $( 'body' );
@@ -52,10 +52,8 @@ Sprite.View.Document = Backbone.View.extend({
 
         Sprite.Global.on( 'resize:canvas-box', function( w, h ) {
             self.setElParams( w, h );
-            self.InnerCanvas.setElParams( w, h );
-            self.OuterCanvas.setElParams( w, h );
-            self.InnerCanvas.render();
-            self.OuterCanvas.render();
+            self.InnerCanvas.setElParams( w, h ).render();
+            self.OuterCanvas.setElParams( w, h ).render();
         });
 
         this.win.on( 'resize', _.bind( this.onWinResize, this ) );
@@ -207,7 +205,7 @@ Sprite.View.Document = Backbone.View.extend({
             file = files[ i ];
             classname = file.name.split( '.' );
             classname.pop();
-            classname = classname.join( '_' ).replace( / /, '-' );
+            classname = classname.join( '-' ).replace( / /, '-' );
 
             if ( classname.search( /^\d/ ) !== -1 ){
                 classname = 'f-' + classname;
@@ -228,9 +226,8 @@ Sprite.View.Document = Backbone.View.extend({
 
     onDropfunc: function( e ) {
         var files = e.originalEvent.dataTransfer.files,
-            $target = $( e.target ),
-            xPos = Math.floor( e.originalEvent.clientX - $target.offset().left ),
-            yPos = Math.floor( e.originalEvent.clientY - $target.offset().top );
+            xPos  = Math.floor( e.originalEvent.clientX - this.rect.x ),
+            yPos  = Math.floor( e.originalEvent.clientY - this.rect.y );
 
         this.nullfunc( e );
         this.readFiles( files, xPos, yPos );        

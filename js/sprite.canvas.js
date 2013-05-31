@@ -8,12 +8,13 @@ Sprite.View.AbstractCanvas = Backbone.View.extend({
         return {
             node: el,
             ctx: ctx
-        }
+        };
     },
 
     setElParams: function( w, h ) {
-        this.options.width  = w;
-        this.options.height = h;
+        this.model.set( 'width', w );
+        this.model.set( 'height', h );
+        return this;
     },
 
     setCanvasParams: function( w, h ) {
@@ -30,8 +31,13 @@ Sprite.View.AbstractCanvas = Backbone.View.extend({
     }
 });
 
-Sprite.View.CanvasOuter = Sprite.View.AbstractCanvas.extend({
-    options: {    
+Sprite.Model.CanvasOuter = Backbone.Model.extend({
+    defaults: {
+        offset: null,
+        rest: null,
+        widthWithOffset: null,
+        heightWidthOffset: null,
+
         width: 400,
         height: 400,
         grid: {
@@ -48,65 +54,11 @@ Sprite.View.CanvasOuter = Sprite.View.AbstractCanvas.extend({
             y: 50,
             lineColor: 'rgba(185, 185, 185, 0.8)'
         }
-    },
-
-    initialize: function() {
-        el = this.createCanvas( 'canvas-outer' );
-        this.el = el.node;
-        this.ctx = el.ctx;
-    },
-
-    render: function() {
-        this.offset         = Math.max( this.options.rulers.width, this.options.grid.width );
-        this.rest           = Math.abs( this.options.rulers.width - this.options.grid.width );
-        this.el.style.top   = - this.offset + 'px';
-        this.el.style.left  = - this.offset + 'px';
-        this.options.width  = this.options.width  + this.offset;
-        this.options.height = this.options.height + this.offset;
-
-        this.setCanvasParams( this.options.width, this.options.height );
-        this.renderGrid();
-        this.renderRulers();
-    },
-
-    renderRulers: function() {
-        var stepX = this.options.rulers.x,
-            stepY = this.options.rulers.y,
-            w     = this.options.rulers.width,
-            h     = this.options.rulers.height;
-
-        this.ctx.strokeStyle = this.options.rulers.lineColor;
-
-        for ( var i = stepX + this.offset; i <= this.options.width;  i += stepX ) {
-            this.drawLine( i - 0.5, 0, i - 0.5, h );
-        }
-
-        for ( var j = stepY + this.offset; j <= this.options.height; j += stepY ) {
-            this.drawLine( 0, j - 0.5, w, j - 0.5 );
-        }
-    },
-
-    renderGrid: function() {
-        var stepX = this.options.grid.x,
-            stepY = this.options.grid.y,
-            w     = this.options.grid.width,
-            h     = this.options.grid.height,
-            rest  = this.rest;
-
-        this.ctx.strokeStyle = this.options.grid.lineColor;
-
-        for ( var i = stepX + this.offset; i <= this.options.width;  i += stepX ) {
-            this.drawLine( i - 0.5, rest, i - 0.5, rest + h );
-        }
-
-        for ( var j = stepY + this.offset; j <= this.options.height; j += stepY ) {
-            this.drawLine( rest, j - 0.5, rest + w, j - 0.5 );
-        }
     }
 });
 
-Sprite.View.CanvasInner = Sprite.View.AbstractCanvas.extend({
-    options: {
+Sprite.Model.CanvasInner = Backbone.Model.extend({
+    defaults: {
         width: 400,
         height: 400,
         fillStyle: '#fff',
@@ -130,8 +82,71 @@ Sprite.View.CanvasInner = Sprite.View.AbstractCanvas.extend({
             y: 5,
             lineColor: 'rgba(185, 185, 185, .1)'
         }
+    }
+});
+
+Sprite.View.CanvasOuter = Sprite.View.AbstractCanvas.extend({
+    initialize: function() {
+        var el   = this.createCanvas( 'canvas-outer' );
+        this.el  = el.node;
+        this.ctx = el.ctx;
     },
 
+    render: function() {
+        var o = this.model.toJSON();
+
+        o.offset           = Math.max( o.rulers.width, o.grid.width );
+        o.rest             = Math.abs( o.rulers.width - o.grid.width );
+        this.el.style.top  = - o.offset + 'px';
+        this.el.style.left = - o.offset + 'px';
+        o.widthWithOffset  = o.width  + o.offset;
+        o.heightWithOffset = o.height + o.offset;
+
+        this.model.set( o );
+        this.setCanvasParams( o.widthWithOffset, o.heightWithOffset );
+        this.renderGrid();
+        this.renderRulers();
+    },
+
+    renderRulers: function() {
+        var o     = this.model.toJSON(),
+            stepX = o.rulers.x,
+            stepY = o.rulers.y,
+            w     = o.rulers.width,
+            h     = o.rulers.height;
+
+        this.ctx.strokeStyle = o.rulers.lineColor;
+
+        for ( var i = stepX + o.offset; i <= o.widthWithOffset;  i += stepX ) {
+            this.drawLine( i - 0.5, 0, i - 0.5, h );
+        }
+
+        for ( var j = stepY + o.offset; j <= o.heightWithOffset; j += stepY ) {
+            this.drawLine( 0, j - 0.5, w, j - 0.5 );
+        }
+    },
+
+    renderGrid: function() {
+        var o     = this.model.toJSON(),
+            stepX = o.grid.x,
+            stepY = o.grid.y,
+            w     = o.grid.width,
+            h     = o.grid.height,
+            rest  = o.rest;
+
+        this.ctx.strokeStyle = o.grid.lineColor;
+
+        for ( var i = stepX + o.offset; i <= o.widthWithOffset;  i += stepX ) {
+            this.drawLine( i - 0.5, rest, i - 0.5, rest + h );
+        }
+
+        for ( var j = stepY + o.offset; j <= o.heightWithOffset; j += stepY ) {
+            this.drawLine( rest, j - 0.5, rest + w, j - 0.5 );
+        }
+    }
+});
+
+Sprite.View.CanvasInner = Sprite.View.AbstractCanvas.extend({
     initialize: function() {
         var el   = this.createCanvas( 'canvas-inner' );
         this.el  = el.node;
@@ -139,24 +154,27 @@ Sprite.View.CanvasInner = Sprite.View.AbstractCanvas.extend({
     },
 
     render: function() {
-        this.setCanvasParams( this.options.width, this.options.height );
+        var o = this.model.toJSON();
+        this.setCanvasParams( o.width, o.height );
         this.fillCanvas();
-        this.renderGrid( this.options.grid );
-        this.renderGrid( this.options.rulers );
+        this.renderGrid( o.grid );
+        this.renderGrid( o.rulers );
         this.renderRulers();
     },
 
     fillCanvas: function() {
+        var o = this.model.toJSON();
         this.ctx.beginPath();
-        this.ctx.fillStyle = this.options.fillStyle;
-        this.ctx.fillRect( 0, 0, this.options.width, this.options.height );
+        this.ctx.fillStyle = o.fillStyle;
+        this.ctx.fillRect( 0, 0, o.width, o.height );
     },
 
     renderGrid: function( params ) {
-        var stepX = params.x,
+        var o     = this.model.toJSON(),
+            stepX = params.x,
             stepY = params.y,
-            w     = this.options.width,
-            h     = this.options.height;
+            w     = o.width,
+            h     = o.height;
 
         this.ctx.strokeStyle = params.lineColor;
 
@@ -170,15 +188,16 @@ Sprite.View.CanvasInner = Sprite.View.AbstractCanvas.extend({
     },
 
     renderRulers: function() {
-        var stepX      = this.options.rulers.x,
-            stepY      = this.options.rulers.y,
-            halfWidth  = Math.floor( this.options.rulers.crossing.width  / 2 ),
-            halfHeight = Math.floor( this.options.rulers.crossing.height / 2 );
+        var o          = this.model.toJSON(),
+            stepX      = o.rulers.x,
+            stepY      = o.rulers.y,
+            halfWidth  = Math.floor( o.rulers.crossing.width  / 2 ),
+            halfHeight = Math.floor( o.rulers.crossing.height / 2 );
 
-        this.ctx.strokeStyle = this.options.rulers.crossing.lineColor;
+        this.ctx.strokeStyle = o.rulers.crossing.lineColor;
 
-        for ( var i = stepX; i <= this.options.width;  i += stepX )
-        for ( var j = stepY; j <= this.options.height; j += stepY ) {
+        for ( var i = stepX; i <= o.width;  i += stepX )
+        for ( var j = stepY; j <= o.height; j += stepY ) {
             //crossing
             this.drawLine( i - halfWidth - 1, j - 0.5, i + halfWidth, j - 0.5 );
             this.drawLine( i - 0.5, j - halfHeight - 1, i - 0.5, j + halfHeight );

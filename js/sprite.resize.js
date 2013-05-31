@@ -54,7 +54,6 @@ Sprite.View.Resize = Backbone.View.extend({
             y: e.pageY - rect.ymax
         };
 
-        this.fakeBorder.show();
         this.onDragStart();
         this.doc.mouseup( _.bind( this.onDragEnd, this ) );
         this.doc.mousemove( function( e ) {
@@ -84,6 +83,8 @@ Sprite.View.Resize = Backbone.View.extend({
     },
 
     onDragStart: function() {
+        this.fakeBox.addClass( 'canvas-fake-active' );
+        this.fakeBorder.show();
         this.body[ 0 ].style.cursor = 'nw-resize';
         document.ondragstart = function() { return false };
         document.body.onselectstart = function() { return false };
@@ -91,6 +92,7 @@ Sprite.View.Resize = Backbone.View.extend({
 
     onDragEnd: function() {
         !this.isHover ? this.fakeParams.hide() : null;
+        this.fakeBox.removeClass( 'canvas-fake-active' );
         this.fakeBorder.hide();
         this.isDragged = false;
         this.body[ 0 ].style.cursor = 'auto';

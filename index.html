@@ -53,7 +53,9 @@
             </div>
 
             <div class="canvas-box">
-                <div class="canvas-elements-zone"></div>
+                <div class="canvas-elements-wrapper">
+                    <div class="canvas-elements-zone"></div>
+                </div>
                 <div class="canvas-fake-box">
                     <div class="canvas-fake-border"></div>
                     <div class="canvas-fake-params"></div>
@@ -66,15 +68,16 @@
     </div>
 
     <script type="text/template" id="tmpl-css-element">
+    <span class="css-element-dot">.</span>
     <span class="css-element-title"><%= name %></span>
-    <span>{</span>
+    <span class="css-element-brace-open">{</span>
     <% for ( var key in props ) { %>
     <div class="css-element-pair css-element-pair-<%= key %>">
         <span class="css-element-key"><%= key %>:</span>
         <span class="css-element-value"><%= props[key] %>;</span>
     </div>
     <% } %>
-    <span>}</span>
+    <span class="css-element-brace-close">}</span>
     </script>
 
     <script src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.4/underscore-min.js"></script>
@@ -90,6 +93,8 @@
             Model: {},
             Collection: {}
         };
+
+        Sprite.Global = new Backbone.Model;
     </script>
     <script src="js/sprite.canvas.js"></script>
     <script src="js/sprite.document.js"></script>

@@ -30,7 +30,6 @@ Sprite.View.CSSElement = Backbone.View.extend({
 });
 
 $( document ).ready( function() {
-    Sprite.Global = new Backbone.Model;
     Sprite.Collection.CanvasElements = new Sprite.Collection.CanvasElements();
     new Sprite.View.Document();
     new Sprite.View.Resize();
