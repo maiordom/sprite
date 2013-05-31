@@ -24,46 +24,61 @@ Class Sprite {
 
         switch( $method ) {
             case 'create_sprite': { $this->createSpriteHandle(); } break;
+            case 'create_image':  { $this->createImageHandle();  } break;
         }
     }
 
-    function readSpriteData() {
-        $index = 0;
-        $isExist = array_key_exists( 'fileContent' . $index, $_REQUEST );
+    function readImageData() {
+        $isExist = array_key_exists( 'fileContent', $_REQUEST );
         $files = Array();
 
-        while ( $isExist === true ) {
+        if ( $isExist === true ) {
             $matches     = Array();
-            $fileContent = $_REQUEST[ 'fileContent' . $index ];
+            $fileContent = $_REQUEST[ 'fileContent' ];
 
             preg_match( $this->fileTypePattern, $fileContent, $matches );
 
             $fileType    = $matches[ 1 ];
-            $fileContent = str_replace( 'data:image/' . $fileType . ';base64,', '', $_REQUEST[ 'fileContent' . $index ] );
+            $fileContent = str_replace( 'data:image/' . $fileType . ';base64,', '', $fileContent );
             $dataURL     = base64_decode( $fileContent );
 
             $files[] = Array(
                 'fileType' => $fileType,
-                'fileContent' => $dataURL,
-                'x' => $_REQUEST[ 'x' . $index ],
-                'y' => $_REQUEST[ 'y' . $index ]
+                'fileContent' => $dataURL
             );
-
-            $isExist = array_key_exists( 'fileContent' . ++$index, $_REQUEST );
         }
 
         return $files;
     }
 
-    function createSpriteTiles( &$files = Array() ) {
+    function readSpriteData() {
+        $i = 0;
+        $isExist = array_key_exists( 'token' . $i, $_REQUEST );
+        $files = Array();
+
+        while ( $isExist === true ) {
+            $files[] = Array(
+                'fileHash' => $_REQUEST[ 'token' . $i ],
+                'x' => $_REQUEST[ 'x' . $i ],
+                'y' => $_REQUEST[ 'y' . $i ]
+            );
+
+            ++$i;
+            $isExist = array_key_exists( 'token' . $i, $_REQUEST );
+        }
+
+        return $files;
+    }
+
+    function createImage( &$files = Array() ) {
         for ( $i = 0, $len = count( $files ); $i < $len; $i++ ) {
-            $tempPath = 'cache/temp' . $files[ $i ][ 'fileType' ];
+            $tempPath = 'cache/temp.' . $files[ $i ][ 'fileType' ];
             file_put_contents( $tempPath, $files[ $i ][ 'fileContent' ] );
             $fileHash = md5_file( $tempPath );
             $filePath = 'cache/' . $fileHash . '.' . $files[ $i ][ 'fileType' ];
             $files[ $i ][ 'filesPath' ] = $filePath;
-            $files[ $i ][ 'fileHash' ] = $fileHash;
-            rename( $tempPath, $filePath );    
+            $files[ $i ][ 'fileHash' ]  = $fileHash;
+            rename( $tempPath, $filePath );
         }
     }
 
@@ -79,10 +94,33 @@ Class Sprite {
         $IMC = $this->imageMagickPath . ' -page ' . $_REQUEST[ 'width' ] . 'x' . $_REQUEST[ 'height' ] . ' ';
 
         for ( $i = 0, $len = count( $files ); $i < $len; $i++ ) {          
-            $IMC .= '-page ' . '+' . $files[ $i ][ 'x' ] . '+' . $files[ $i ][ 'y' ] . ' ' . $files[ $i ][ 'filesPath' ] . ' ';
+            $IMC .= '-page ' . '+' . $files[ $i ][ 'x' ] . '+' . $files[ $i ][ 'y' ] . ' cache/' . $files[ $i ][ 'fileHash' ] . '.png ';
         }
 
         return $IMC . '-background transparent -flatten cache/' . $sprite . '.png';
+    }
+
+    function createImageHandle() {
+        if ( !$this->isAvailableIM() ) {
+            echo json_encode( Array(
+                'result' => 'ERROR_IMAGE_MAGICK_NOT_AVAILABLE'
+            ));
+        } else {
+            $files = $this->readImageData();
+
+            if ( count( $files ) === 0 ) {
+                echo json_encode( Array(
+                    'result' => 'ERROR_ZERO_FILES'
+                ));
+            } else {
+                $this->createImage( $files );
+                
+                echo json_encode( Array(
+                    'result' => 'RESULT_OK',
+                    'token' => $files[ 0 ][ 'fileHash' ]
+                ));
+            }
+        }
     }
 
     function createSpriteHandle() {
@@ -95,26 +133,25 @@ Class Sprite {
 
             if ( count( $files ) === 0 ) {
                 echo json_encode( Array(
-                    'result' => 'ERROR_ZERO_FILES'
+                    'result' => 'ERROR_ZERO_TOKENS'
                 ));
             } else {
-                $this->createSpriteTiles( $files );
-                $spriteMD5 = md5( $this->getSumHash( $files ) );
-                $IMC = $this->getIMC( $files, $spriteMD5 );
-                $this->createSprite( $IMC, $spriteMD5 );
+                $token = md5( $this->getSumHash( $files ) );
+                $IMC = $this->getIMC( $files, $token );
+                $this->exec( $IMC );
 
                 echo json_encode( Array(
                     'result' => 'RESULT_OK',
-                    'file' => $spriteMD5
+                    'token' => $token
                 ));
             }
         }
     }
 
-    function createSprite( $IMC, $sprite ) {
+    function exec( $cmd ) {
         $out = Array();
         $err = -1;
-        exec( escapeshellcmd( $IMC ), $out, $err );
+        exec( escapeshellcmd( $cmd ), $out, $err );
     }
 }
 

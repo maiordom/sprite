@@ -6,7 +6,8 @@ Sprite.Model.CanvasElement = Backbone.Model.extend({
         h: 0,
         name: null,
         fileEntity: null,
-        fileContent: null
+        fileContent: null,
+        token: null
     },
 
     initialize: function() {
@@ -18,23 +19,54 @@ Sprite.Model.CanvasElement = Backbone.Model.extend({
     sync: function() {
     },
 
+    save: function() {
+        var self = this;
+        $.ajax({
+            data: this.prepareDataToCreateImage(),
+            url: 'api/create_image',
+            dataType: 'json',
+            method: 'POST',
+            success: function( json ) {
+                if ( json.result === 'RESULT_OK' ) {
+                    self.set( 'token', json.token );
+                }
+                console.log( json );
+            }
+        });
+    },
+
+    onLocalLoadFile: function( e, img ) {
+        this.set({
+            w: e.target.width,
+            h: e.target.height,
+            fileContent: img.src
+        });
+        this.trigger( 'onloadFile' );
+        this.save();
+    },
+
     readFile: function() {
-        var reader = new FileReader(), $this = this;
+        var reader = new FileReader(), self = this;
         
         reader.onload = function( e ) {
             var img = document.createElement( 'img' );
             img.onload = function( e ) {
-                $this.set({
-                    w: e.target.width,
-                    h: e.target.height,
-                    fileContent: this.src
-                });
-                $this.trigger( 'onloadFile' );
+                self.onLocalLoadFile( e, this );    
             };
             img.src = e.target.result;
         }
 
         reader.readAsDataURL( this.get( 'fileEntity' ) );
+    },
+
+    prepareDataToCreateImage: function() {
+        var modelData = this.toJSON(), reqData = [];
+        
+        reqData.push( 'fileContent' + '=' + encodeURIComponent( modelData.fileContent ) );
+        reqData.push( 'w' + '=' + modelData.w );
+        reqData.push( 'h' + '=' + modelData.h );
+
+        return reqData.join( '&' );
     }
 });
 
@@ -51,7 +83,7 @@ Sprite.Collection.CanvasElements = Backbone.Collection.extend({
             dataType: 'json',
             success: function( json ) {
                 if ( json.result === 'RESULT_OK' ) {
-                    location.href = 'server/cache/' + json.file + '.png'
+                    location.href = 'server/cache/' + json.token + '.png'
                 }
                 console.log( json );
             }
@@ -59,24 +91,18 @@ Sprite.Collection.CanvasElements = Backbone.Collection.extend({
     },
 
     prepareDataToCreateCanvas: function( canvasWidth, canvasHeight ) {
-        var reqData = [], serializedData = [], tmp;
+        var reqData = [];
 
-        this.each( function( elModel ) {
-            tmp = elModel.toJSON();
-            delete tmp.fileEntity;
-            reqData.push( tmp );
+        this.each( function( elModel, index ) {
+            reqData.push( 'token' + index + '=' + elModel.get( 'token' ) );
+            reqData.push( 'x' + index + '=' + elModel.get( 'x' ) );
+            reqData.push( 'y' + index + '=' + elModel.get( 'y' ) );
         });
 
-        serializedData.push( 'width='  + canvasWidth );
-        serializedData.push( 'height=' + canvasHeight );
+        reqData.push( 'width='  + canvasWidth );
+        reqData.push( 'height=' + canvasHeight );
 
-        _.each( reqData, function( reqDataItem, index ) {
-            _.each( reqDataItem, function( value, key ) {
-                serializedData.push( key + index + '=' + encodeURIComponent( value ) );
-            });
-        });
-
-        return serializedData.join( '&' );
+        return reqData.join( '&' );
     }
 });
 

@@ -1,6 +1,6 @@
 RewriteBase /
 RewriteEngine on
-RewriteRule ^api/create_sprite server/api.php
+RewriteRule ^api/ server/api.php
 
 DirectoryIndex index.html
 AddType application/octet-stream .png .jpg .jpeg .zip
