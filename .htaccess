@@ -3,4 +3,4 @@ RewriteEngine on
 RewriteRule ^api/ server/api.php
 
 DirectoryIndex index.html
-AddType application/octet-stream .png .jpg .jpeg .zip
+AddType application/octet-stream .zip

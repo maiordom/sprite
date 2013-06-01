@@ -8,6 +8,7 @@ Sprite.View.Document = Backbone.View.extend({
     },
 
     initialize: function() {
+        var self = this;
         this.cacheObjects();
 
         this.$el.append( this.InnerCanvas.el );
@@ -22,6 +23,10 @@ Sprite.View.Document = Backbone.View.extend({
         this.setElStartPoint();
         this.setElParams( this.$el.width(), this.$el.height() );        
         this.bindEvents();
+
+        Sprite.Global.readStorage( function( token, data ) {
+            self.createImg( token, data );    
+        });
     },
 
     cacheObjects: function() {
@@ -40,7 +45,8 @@ Sprite.View.Document = Backbone.View.extend({
 
         this.rect = {
             x: null, y: null, w: null, h: null, xmax: null, ymax: null
-        },
+        };
+
         this.dragObj = {
             mouseOffset: { x: null, y: null },
             elModel: null
@@ -151,6 +157,7 @@ Sprite.View.Document = Backbone.View.extend({
     },
 
     onDragEnd: function() {
+        this.dragObj.elModel.saveParamsToStorage();
         this.doc.off( 'mouseup mousemove' );
         this.body.css( 'cursor', 'auto' ).removeClass( 'drag' );
         document.ondragstart = null;
@@ -175,6 +182,33 @@ Sprite.View.Document = Backbone.View.extend({
         });
     },
 
+    createImg: function( token, data ) {        
+        var img = new Image(), self = this;
+        img.onload = function() {
+            self.createEl( token, data, this.width, this.height, img );
+        };
+        img.src = 'server/cache/' + token + '.png'
+    },
+
+    createEl: function( token, data, w, h, img ) {
+        var modelParams = {
+                name: data.name,
+                x: data.x,
+                y: data.y,
+                w: w,
+                h: h,
+                token: token,
+                fileEntity: img,
+                fileContent: img.src
+            },
+            canvasElModel = new Sprite.Model.CanvasElement( modelParams ),
+            canvasElView  = new Sprite.View.CanvasElement( { model: canvasElModel } ),
+            cssElView     = new Sprite.View.CSSElement( { model: canvasElModel } );
+
+        Sprite.Collection.CanvasElements.add( canvasElModel );
+        this.onLoadFile( canvasElView, cssElView );
+    },
+
     createElement: function( modelParams ) {
         var self = this,
             canvasElModel = new Sprite.Model.CanvasElement( modelParams ),
@@ -184,13 +218,17 @@ Sprite.View.Document = Backbone.View.extend({
         Sprite.Collection.CanvasElements.add( canvasElModel );
 
         canvasElModel.on( 'onloadFile', function() {
-            canvasElView.render();
-            cssElView.render();
-
-            self.canvasElZone.append( canvasElView.el );
-            self.cssInner.append( cssElView.el );
-            self.setCSSScrollPane();
+            self.onLoadFile( canvasElView, cssElView );
         });
+    },
+
+    onLoadFile: function( canvasElView, cssElView ) {
+        canvasElView.render();
+        cssElView.render();
+
+        this.canvasElZone.append( canvasElView.el );
+        this.cssInner.append( cssElView.el );
+        this.setCSSScrollPane();
     },
 
     nullfunc: function( e ) {

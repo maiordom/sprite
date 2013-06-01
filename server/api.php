@@ -90,7 +90,7 @@ Class Sprite {
         return $hash;
     }
 
-    function getIMC( $files = Array(), $sprite ) {
+    function getCmdToCreateSprite( $files = Array(), $sprite ) {
         $IMC = $this->imageMagickPath . ' -page ' . $_REQUEST[ 'width' ] . 'x' . $_REQUEST[ 'height' ] . ' ';
 
         for ( $i = 0, $len = count( $files ); $i < $len; $i++ ) {          
@@ -137,8 +137,9 @@ Class Sprite {
                 ));
             } else {
                 $token = md5( $this->getSumHash( $files ) );
-                $IMC = $this->getIMC( $files, $token );
-                $this->exec( $IMC );
+                $cmd = $this->getCmdToCreateSprite( $files, $token );
+                $this->exec( $cmd );
+                $this->createSpriteZip( $token );
 
                 echo json_encode( Array(
                     'result' => 'RESULT_OK',
@@ -146,6 +147,20 @@ Class Sprite {
                 ));
             }
         }
+    }
+
+    function createSpriteZip( $token ) {
+        $zip = new ZipArchive();
+
+        $fileName = 'zip/' . $token . '.zip';
+
+        if ( $zip->open( $fileName, ZIPARCHIVE::CREATE ) !== true ) {
+            fwrite( STDERR, 'Error while creating archive file' );
+            exit( 1 );
+        }
+
+        $zip->addFile( 'cache/' . $token . '.png', $token . '.png' );
+        $zip->close();
     }
 
     function exec( $cmd ) {

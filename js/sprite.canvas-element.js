@@ -19,6 +19,21 @@ Sprite.Model.CanvasElement = Backbone.Model.extend({
     sync: function() {
     },
 
+    saveParamsToStorage: function( x, y ) {
+        var token = this.get( 'token' );
+
+        if ( token === null ) { return false; }
+
+        var data = localStorage[ 'sprite' ];
+        data = data ? JSON.parse( data ) : {};
+        data[ token ] = { 
+            x: x === undefined ? this.get( 'x' ) : x, 
+            y: y === undefined ? this.get( 'y' ) : y,
+            name: this.get( 'name' )
+        };
+        localStorage.setItem( 'sprite', JSON.stringify( data ) );
+    },
+
     save: function() {
         var self = this;
         $.ajax({
@@ -29,6 +44,7 @@ Sprite.Model.CanvasElement = Backbone.Model.extend({
             success: function( json ) {
                 if ( json.result === 'RESULT_OK' ) {
                     self.set( 'token', json.token );
+                    self.saveParamsToStorage();
                 }
                 console.log( json );
             }
@@ -83,7 +99,7 @@ Sprite.Collection.CanvasElements = Backbone.Collection.extend({
             dataType: 'json',
             success: function( json ) {
                 if ( json.result === 'RESULT_OK' ) {
-                    location.href = 'server/cache/' + json.token + '.png'
+                    location.href = 'server/zip/' + json.token + '.zip'
                 }
                 console.log( json );
             }
