@@ -71,9 +71,11 @@
     </div>
 
     <script type="text/template" id="tmpl-css-element">
-    <span class="css-element-dot">.</span>
-    <span class="css-element-title"><%= name %></span>
-    <span class="css-element-brace-open">{</span>
+    <div class="css-element-classname">
+        <span class="css-element-dot">.</span>
+        <span class="css-element-title"><%= name %></span>
+        <span class="css-element-brace-open">{</span>
+    </div>
     <% for ( var key in props ) { %>
     <div class="css-element-pair css-element-pair-<%= key %>">
         <span class="css-element-key"><%= key %>:</span>
@@ -103,6 +105,7 @@
     <script src="js/sprite.resize.js"></script>
     <script src="js/sprite.canvas-element.js"></script>
     <script src="js/sprite.global.js"></script>
+    <script src="js/sprite.css-element.js"></script>
     <script src="js/sprite.test.js"></script>
     <script src="js/sprite.js"></script>
 </body>

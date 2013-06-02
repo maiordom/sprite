@@ -24,8 +24,14 @@ Sprite.View.Document = Backbone.View.extend({
         this.setElParams( this.$el.width(), this.$el.height() );        
         this.bindEvents();
 
-        Sprite.Global.readStorage( function( token, data ) {
+        Sprite.Global.readElsInStorage( function( token, data ) {
             self.createImg( token, data );    
+        });
+
+        Sprite.Global.readParamsInStorage( function( w, h ) {
+            self.setElParams( w, h );
+            self.InnerCanvas.setElParams( w, h ).render();
+            self.OuterCanvas.setElParams( w, h ).render();
         });
     },
 
@@ -60,6 +66,7 @@ Sprite.View.Document = Backbone.View.extend({
             self.setElParams( w, h );
             self.InnerCanvas.setElParams( w, h ).render();
             self.OuterCanvas.setElParams( w, h ).render();
+            Sprite.Global.setParamsInStorage( w, h );
         });
 
         this.win.on( 'resize', _.bind( this.onWinResize, this ) );
@@ -95,15 +102,13 @@ Sprite.View.Document = Backbone.View.extend({
     setElStartPoint: function() {
         var rect = this.$el.offset();
 
-        this.rect = {
-            x: rect.left,
-            y: rect.top
-        };
+        this.rect.x = rect.left;
+        this.rect.y = rect.top;
     },
 
     setElParams: function( w, h ) {
         this.rect.xmax = this.rect.x + w;
-        this.rect.ymax = this.rect.y  + h;
+        this.rect.ymax = this.rect.y + h;
         this.rect.w = w;
         this.rect.h = h;
 
@@ -260,6 +265,7 @@ Sprite.View.Document = Backbone.View.extend({
 
     onSelectFiles: function( e ) {
         this.readFiles( e.target.files, 0, 0 );
+        e.target.value = '';
     },
 
     onDropfunc: function( e ) {

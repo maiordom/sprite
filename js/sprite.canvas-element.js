@@ -35,20 +35,22 @@ Sprite.Model.CanvasElement = Backbone.Model.extend({
     },
 
     save: function() {
-        var self = this;
-        $.ajax({
-            data: this.prepareDataToCreateImage(),
-            url: 'api/create_image',
-            dataType: 'json',
-            method: 'POST',
-            success: function( json ) {
-                if ( json.result === 'RESULT_OK' ) {
+        var self = this,      
+            xhr = new XMLHttpRequest();    
+
+        xhr.onreadystatechange = function() {
+            if ( xhr.readyState === 4 ) {
+                if ( xhr.status === 200 ) {
+                    var json = JSON.parse( xhr.responseText );
                     self.set( 'token', json.token );
                     self.saveParamsToStorage();
+                    console.log( json );
                 }
-                console.log( json );
             }
-        });
+        };
+        
+        xhr.open( 'POST', '/api/create_image', true );
+        xhr.send( this.prepareDataToCreateImage() );
     },
 
     onLocalLoadFile: function( e, img ) {
@@ -76,13 +78,13 @@ Sprite.Model.CanvasElement = Backbone.Model.extend({
     },
 
     prepareDataToCreateImage: function() {
-        var modelData = this.toJSON(), reqData = [];
+        var modelData = this.toJSON(), formData = new FormData();
         
-        reqData.push( 'fileContent' + '=' + encodeURIComponent( modelData.fileContent ) );
-        reqData.push( 'w' + '=' + modelData.w );
-        reqData.push( 'h' + '=' + modelData.h );
+        formData.append( 'fileContent', modelData.fileContent );
+        formData.append( 'w', modelData.w );
+        formData.append( 'h', modelData.h );
 
-        return reqData.join( '&' );
+        return formData;
     }
 });
 
@@ -111,8 +113,8 @@ Sprite.Collection.CanvasElements = Backbone.Collection.extend({
 
         this.each( function( elModel, index ) {
             reqData.push( 'token' + index + '=' + elModel.get( 'token' ) );
-            reqData.push( 'x' + index + '=' + elModel.get( 'x' ) );
-            reqData.push( 'y' + index + '=' + elModel.get( 'y' ) );
+            reqData.push( 'x'     + index + '=' + elModel.get( 'x' ) );
+            reqData.push( 'y'     + index + '=' + elModel.get( 'y' ) );
         });
 
         reqData.push( 'width='  + canvasWidth );
