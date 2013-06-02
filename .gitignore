@@ -1,4 +1,6 @@
 server/cache
 server/log
 server/zip
+node_modules
+bundle
 .idea
