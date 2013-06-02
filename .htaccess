@@ -1,5 +1,5 @@
-RewriteBase /
 RewriteEngine on
+RewriteBase /
 RewriteRule ^api/ server/api.php
 
 DirectoryIndex index.html
