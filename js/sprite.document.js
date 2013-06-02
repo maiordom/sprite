@@ -24,8 +24,8 @@ Sprite.View.Document = Backbone.View.extend({
         this.setElParams( this.$el.width(), this.$el.height() );        
         this.bindEvents();
 
-        Sprite.Global.readElsInStorage( function( token, data ) {
-            self.createImg( token, data );    
+        Sprite.Global.readElsInStorage( function( uuid, data ) {
+            self.createImg( uuid, data );
         });
 
         Sprite.Global.readParamsInStorage( function( w, h ) {
@@ -162,7 +162,7 @@ Sprite.View.Document = Backbone.View.extend({
     },
 
     onDragEnd: function() {
-        this.dragObj.elModel.saveParamsToStorage();
+        this.dragObj.elModel.saveCoordsToStorage();
         this.doc.off( 'mouseup mousemove' );
         this.body.css( 'cursor', 'auto' ).removeClass( 'drag' );
         document.ondragstart = null;
@@ -187,22 +187,23 @@ Sprite.View.Document = Backbone.View.extend({
         });
     },
 
-    createImg: function( token, data ) {        
+    createImg: function( uuid, data ) {        
         var img = new Image(), self = this;
         img.onload = function() {
-            self.createEl( token, data, this.width, this.height, img );
+            self.createEl( uuid, data, this.width, this.height, img );
         };
-        img.src = 'server/cache/' + token + '.png'
+        img.src = 'server/cache/' + data.token + '.png'
     },
 
-    createEl: function( token, data, w, h, img ) {
+    createEl: function( uuid, data, w, h, img ) {
         var modelParams = {
                 name: data.name,
                 x: data.x,
                 y: data.y,
                 w: w,
                 h: h,
-                token: token,
+                uuid: uuid,
+                token: data.token,
                 fileEntity: img,
                 fileContent: img.src
             },

@@ -17,6 +17,17 @@ Class Sprite {
         $this->route();
     }
 
+    function uuid() {
+        $chars = md5( uniqid( rand() ) );
+        $uuid  = substr( $chars, 0,  8 ) .
+                 substr( $chars, 8,  4 ) . 
+                 substr( $chars, 12, 4 ) .
+                 substr( $chars, 16, 4 ) .
+                 substr( $chars, 20, 12 );
+
+        return $uuid;
+    }
+
     function isAvailableIM() {
         $out = Array();
         $err = -1;
@@ -52,7 +63,8 @@ Class Sprite {
 
             $files[] = Array(
                 'fileType' => $fileType,
-                'fileContent' => $dataURL
+                'fileContent' => $dataURL,
+                'uuid' => $this->uuid()
             );
         }
 
@@ -81,13 +93,14 @@ Class Sprite {
     function createImage( &$files = Array() ) {
         for ( $i = 0, $len = count( $files ); $i < $len; $i++ ) {
             $type = $files[ $i ][ 'fileType' ];
-            $tempPath = 'cache/temp.' . $type;
+            $uuid = $files[ $i ][ 'uuid' ];
+            $tempPath = 'cache/' . $uuid . '.' . $type;
             file_put_contents( $tempPath, $files[ $i ][ 'fileContent' ] );
 
             if ( $type !== 'png' ) {
-                $this->exec( $this->imageMagickPath . ' ' . $tempPath . ' ' . 'cache/temp.png' );
+                $this->exec( $this->imageMagickPath . ' ' . $tempPath . ' ' . 'cache/' . $uuid . '.png' );
                 unlink( $tempPath );
-                $tempPath = 'cache/temp.png';
+                $tempPath = 'cache/' . $uuid . '.png';
                 $files[ $i ][ 'fileType' ] = 'png';
                 $type = 'png';
             }
@@ -130,7 +143,8 @@ Class Sprite {
             
             echo json_encode( Array(
                 'result' => 'RESULT_OK',
-                'token' => $files[ 0 ][ 'fileHash' ]
+                'token'  => $files[ 0 ][ 'fileHash' ],
+                'uuid'   => $files[ 0 ][ 'uuid' ]
             ));
         }
     }

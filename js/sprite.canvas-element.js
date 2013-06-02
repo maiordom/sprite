@@ -7,50 +7,75 @@ Sprite.Model.CanvasElement = Backbone.Model.extend({
         name: null,
         fileEntity: null,
         fileContent: null,
-        token: null
+        token: null,
+        uuid: null
     },
 
     initialize: function() {
         if ( this.get( 'fileEntity' ) + '' === '[object File]' ) {
-            this.readFile();    
+            this.readFile();
         }
     },
 
     sync: function() {
     },
 
-    saveParamsToStorage: function( x, y ) {
-        var token = this.get( 'token' );
+    hasUuid: function( callback ) {
+        var uuid = this.get( 'uuid' );
+        uuid ? callback && callback( uuid ) : null;
+    },
 
-        if ( token === null ) { return false; }
+    saveNameToStorage: function( name ) {
+        this.setParamsToStorage({ name: name === undefined ? this.get( 'name' ) : name });
+    },
 
-        var data = localStorage[ 'sprite' ];
-        data = data ? JSON.parse( data ) : {};
-        data[ token ] = { 
-            x: x === undefined ? this.get( 'x' ) : x, 
-            y: y === undefined ? this.get( 'y' ) : y,
-            name: this.get( 'name' )
-        };
-        localStorage.setItem( 'sprite', JSON.stringify( data ) );
+    saveCoordsToStorage: function( x, y ) {
+        this.setParamsToStorage({
+            x: x === undefined ? this.get( 'x' ) : x,
+            y: y === undefined ? this.get( 'y' ) : y
+        });
+    },
+
+    setParamsToStorage: function( params ) {
+        this.hasUuid( function( uuid ) {
+            var data = localStorage[ 'sprite' ];
+            data = data ? JSON.parse( data ) : {};
+            data[ uuid ] ? null : data[ uuid ] = {};
+
+            for ( var i in params ) {
+                data[ uuid ][ i ] = params[ i ];
+            }
+
+            localStorage.setItem( 'sprite', JSON.stringify( data ) );
+        });
     },
 
     save: function() {
-        var self = this,      
-            xhr = new XMLHttpRequest();    
+        var self = this,
+            xhr = new XMLHttpRequest();
 
         xhr.onreadystatechange = function() {
             if ( xhr.readyState === 4 ) {
                 if ( xhr.status === 200 ) {
-                    var json = JSON.parse( xhr.responseText );
-                    self.set( 'token', json.token );
-                    self.saveParamsToStorage();
-                    console.log( json );
+                    self.onSuccessSave( JSON.parse( xhr.responseText ) );
                 }
             }
         };
         
         xhr.open( 'POST', '/api/create_image', true );
         xhr.send( this.prepareDataToCreateImage() );
+    },
+
+    onSuccessSave: function( json ) {
+        this.set( 'token', json.token );
+        this.set( 'uuid', json.uuid );        
+        this.setParamsToStorage({
+            uuid: json.uuid,
+            token: json.token
+        });
+        this.saveCoordsToStorage();
+        this.saveNameToStorage();
+        console.log( json );
     },
 
     onLocalLoadFile: function( e, img ) {
@@ -69,7 +94,7 @@ Sprite.Model.CanvasElement = Backbone.Model.extend({
         reader.onload = function( e ) {
             var img = document.createElement( 'img' );
             img.onload = function( e ) {
-                self.onLocalLoadFile( e, this );    
+                self.onLocalLoadFile( e, this );
             };
             img.src = e.target.result;
         }
