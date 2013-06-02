@@ -85,7 +85,6 @@ Sprite.Model.CanvasElement = Backbone.Model.extend({
             fileContent: img.src
         });
         this.trigger( 'onloadFile' );
-        this.save();
     },
 
     readFile: function() {
@@ -95,6 +94,7 @@ Sprite.Model.CanvasElement = Backbone.Model.extend({
             var img = document.createElement( 'img' );
             img.onload = function( e ) {
                 self.onLocalLoadFile( e, this );
+                self.save();
             };
             img.src = e.target.result;
         }

@@ -47,7 +47,8 @@ Sprite.View.Document = Backbone.View.extend({
         this.cssDesc      = $( '.css-description' );
         this.wrapper      = $( '.wrapper' );
         this.panel        = $( '.panel' );
-        this.sldEl        = $( {} );
+        this.sldCanvasEl  = $( {} );
+        this.sldCSSEl     = $( {} );
 
         this.rect = {
             x: null, y: null, w: null, h: null, xmax: null, ymax: null
@@ -79,24 +80,50 @@ Sprite.View.Document = Backbone.View.extend({
         	Sprite.Collection.CanvasElements.createSprite( self.rect.w, self.rect.h );
         });
 
+        this.cssInner.on( 'mousedown', '.css-element', function() {
+            self.onCSSElClick( this );
+        });
+
         this.$el.on( 'mousedown', '.canvas-element', function( e ) {
-            self.sldEl.removeClass( 'canvas-element-selected' );
-            self.sldEl = $( this ).addClass( 'canvas-element-selected' );
-            self.dragEngine( self.sldEl, e );
+            self.onCanvasElClick( this );
+            self.dragEngine( self.sldCanvasEl, e );
         });
 
         this.$el.on( 'click', '.canvas-element', function() {
-            self.sldEl.removeClass( 'canvas-element-selected' );
-            self.sldEl = $( this ).toggleClass( 'canvas-element-selected' );
+            self.onCanvasElClick( this );
         });
 
         this.$el.on( 'mouseenter', '.canvas-element', function() {
-            $( this ).addClass( 'canvas-element-hover' );
+            var el = $( this ), id = el.data( 'id');
+            el.addClass( 'canvas-element-hover' );
+            self.cssInner.find( '.css-element[data-id="' + id + '"]' ).addClass( 'css-element-hover' );
         });
 
         this.$el.on( 'mouseleave', '.canvas-element', function() {
-            $( this ).removeClass( 'canvas-element-hover' );
+            var el = $( this ), id = el.data( 'id' );
+            el.removeClass( 'canvas-element-hover' );
+            self.cssInner.find( '.css-element[data-id="' + id + '"]' ).removeClass( 'css-element-hover' );
         });
+    },
+
+    onCSSElClick: function( el ) {
+        var $el = $( el ), id = $el.data( 'id' );
+        
+        this.sldCSSEl.removeClass( 'css-element-selected' );
+        this.sldCSSEl = $el.addClass( 'css-element-selected' );
+
+        this.sldCanvasEl.removeClass( 'canvas-element-selected' );
+        this.sldCanvasEl = this.$el.find( '.canvas-element[data-id="' + id + '"]' ).addClass( 'canvas-element-selected' );
+    }, 
+
+    onCanvasElClick: function( el ) {
+        var $el = $( el ), id = $el.data( 'id' );
+
+        this.sldCanvasEl.removeClass( 'canvas-element-selected' );
+        this.sldCanvasEl = $el.addClass( 'canvas-element-selected' );
+
+        this.sldCSSEl.removeClass( 'css-element-selected' );
+        this.sldCSSEl = this.cssInner.find( '.css-element[data-id="' + id + '"]' ).addClass( 'css-element-selected' );
     },
 
     setElStartPoint: function() {
