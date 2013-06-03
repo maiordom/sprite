@@ -20,7 +20,7 @@ Class Sprite {
     function uuid() {
         $chars = md5( uniqid( rand() ) );
         $uuid  = substr( $chars, 0,  8 ) .
-                 substr( $chars, 8,  4 ) . 
+                 substr( $chars, 8,  4 ) .
                  substr( $chars, 12, 4 ) .
                  substr( $chars, 16, 4 ) .
                  substr( $chars, 20, 12 );
@@ -62,9 +62,9 @@ Class Sprite {
             $dataURL     = base64_decode( $fileContent );
 
             $files[] = Array(
-                'fileType' => $fileType,
+                'fileType'    => $fileType,
                 'fileContent' => $dataURL,
-                'uuid' => $this->uuid()
+                'uuid'        => $this->uuid()
             );
         }
 
@@ -79,8 +79,11 @@ Class Sprite {
         while ( $isExist === true ) {
             $files[] = Array(
                 'fileHash' => $_REQUEST[ 'token' . $i ],
-                'x' => $_REQUEST[ 'x' . $i ],
-                'y' => $_REQUEST[ 'y' . $i ]
+                'x'        => $_REQUEST[ 'x'     . $i ],
+                'y'        => $_REQUEST[ 'y'     . $i ],
+                'name'     => $_REQUEST[ 'name'  . $i ],
+                'w'        => $_REQUEST[ 'w'     . $i ],
+                'h'        => $_REQUEST[ 'h'     . $i ]
             );
 
             ++$i;
@@ -96,20 +99,17 @@ Class Sprite {
             $uuid = $files[ $i ][ 'uuid' ];
             $tempPath = 'cache/' . $uuid . '.' . $type;
             file_put_contents( $tempPath, $files[ $i ][ 'fileContent' ] );
+            $fileHash = md5_file( $tempPath );
+            $files[ $i ][ 'fileHash' ] = $fileHash;
+            $filePath = 'cache/' . $fileHash . '.png';
 
             if ( $type !== 'png' ) {
-                $this->exec( $this->imageMagickPath . ' ' . $tempPath . ' ' . 'cache/' . $uuid . '.png' );
+                $this->execCmd( $this->imageMagickPath . ' ' . $tempPath . ' ' . $filePath );
                 unlink( $tempPath );
-                $tempPath = 'cache/' . $uuid . '.png';
                 $files[ $i ][ 'fileType' ] = 'png';
-                $type = 'png';
+            } else {
+                rename( $tempPath, $filePath );
             }
-
-            $fileHash = md5_file( $tempPath );
-            $filePath = 'cache/' . $fileHash . '.' . $type;
-            $files[ $i ][ 'filesPath' ] = $filePath;
-            $files[ $i ][ 'fileHash' ]  = $fileHash;
-            rename( $tempPath, $filePath );
         }
     }
 
@@ -159,8 +159,11 @@ Class Sprite {
         } else {
             $token = md5( $this->getSumHash( $files ) );
             $cmd = $this->getCmdToCreateSprite( $files, $token );
-            $this->exec( $cmd );
+            $this->execCmd( $cmd );
+            $this->createSpriteCSS( $token, $files, 'css', ';', true );
+            $this->createSpriteCSS( $token, $files, 'styl', '', false );
             $this->createSpriteZip( $token );
+            $this->removeZipItems( $token );
 
             echo json_encode( Array(
                 'result' => 'RESULT_OK',
@@ -178,11 +181,38 @@ Class Sprite {
             exit( 0 );
         }
 
-        $zip->addFile( 'cache/' . $token . '.png', $token . '.png' );
+        $zip->addFile( 'cache/' . $token . '.png',  $token . '.png'  );
+        $zip->addFile( 'cache/' . $token . '.css',  $token . '.css'  );
+        $zip->addFile( 'cache/' . $token . '.styl', $token . '.styl' );
         $zip->close();
     }
 
-    function exec( $cmd ) {
+    function removeZipItems( $token ) {
+        $this->removeFile( 'cache/' . $token . '.png'  );
+        $this->removeFile( 'cache/' . $token . '.css'  );
+        $this->removeFile( 'cache/' . $token . '.styl' );
+    }
+
+    function removeFile( $file ) {
+        file_exists( $file ) === true ? unlink( $file ) : null;
+    }
+
+    function createSpriteCSS( $token, $files, $type, $sem, $braces = true ) {
+        $f = fopen( 'cache/' . $token . '.' . $type, 'w' );
+
+        for ( $i = 0, $len = count( $files ); $i < $len; $i++ ) {
+            $o = $files [ $i ];
+            fwrite( $f, '.' . $o[ 'name' ] . ( $braces ? ' {' : '' ) . PHP_EOL );
+            fwrite( $f, '    width: ' . $o[ 'w' ] . 'px' . $sem . PHP_EOL );
+            fwrite( $f, '    height: ' . $o[ 'h' ] . 'px' . $sem . PHP_EOL );
+            fwrite( $f, '    background-position: ' . $o[ 'x' ] . 'px ' . $o[ 'y' ] . 'px' . $sem . PHP_EOL );
+            fwrite( $f, ( $braces ? '}' : '' ) . PHP_EOL );
+        }
+
+        fclose( $f );
+    }
+
+    function execCmd( $cmd ) {
         $out = Array();
         $err = -1;
         exec( escapeshellcmd( $cmd ), $out, $err );

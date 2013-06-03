@@ -21,11 +21,14 @@ Sprite.View.Document = Backbone.View.extend({
         this.setCSSScrollPane();
 
         this.setElStartPoint();
-        this.setElParams( this.$el.width(), this.$el.height() );        
+        this.setElParams( this.$el.width(), this.$el.height() );
         this.bindEvents();
 
-        Sprite.Global.readElsInStorage( function( uuid, data ) {
-            self.createImg( uuid, data );
+        Sprite.Global.readElsInStorage( function( data ) {
+            var src = 'server/cache/' + data.token + '.png';
+            self.createImg( src, function( img ) {
+                self.createEl( data, img );
+            });
         });
 
         Sprite.Global.readParamsInStorage( function( w, h ) {
@@ -82,6 +85,18 @@ Sprite.View.Document = Backbone.View.extend({
 
         this.cssInner.on( 'mousedown', '.css-element', function() {
             self.onCSSElClick( this );
+        });
+
+        this.cssInner.on( 'mouseenter', '.css-element', function() {
+            var el = $( this ), id = el.data( 'id');
+            el.addClass( 'css-element-hover' );
+            self.canvasElZone.find( '.canvas-element[data-id="' + id + '"]' ).addClass( 'canvas-element-hover' );
+        });
+
+        this.cssInner.on( 'mouseleave', '.css-element', function() {
+            var el = $( this ), id = el.data( 'id' );
+            el.removeClass( 'css-element-hover' );
+            self.canvasElZone.find( '.canvas-element[data-id="' + id + '"]' ).removeClass( 'canvas-element-hover' );
         });
 
         this.$el.on( 'mousedown', '.canvas-element', function( e ) {
@@ -214,26 +229,22 @@ Sprite.View.Document = Backbone.View.extend({
         });
     },
 
-    createImg: function( uuid, data ) {        
-        var img = new Image(), self = this;
+    createImg: function( src, callback, error ) {        
+        var img = new Image();
         img.onload = function() {
-            self.createEl( uuid, data, this.width, this.height, img );
+            callback && callback( img );
         };
-        img.src = 'server/cache/' + data.token + '.png'
+        img.onerror = function() {
+            error && error( img );
+        };
+        img.src = src;
     },
 
-    createEl: function( uuid, data, w, h, img ) {
-        var modelParams = {
-                name: data.name,
-                x: data.x,
-                y: data.y,
-                w: w,
-                h: h,
-                uuid: uuid,
-                token: data.token,
+    createEl: function( data, img ) {
+        var modelParams = _( data ).extend({
                 fileEntity: img,
                 fileContent: img.src
-            },
+            }),
             canvasElModel = new Sprite.Model.CanvasElement( modelParams ),
             canvasElView  = new Sprite.View.CanvasElement( { model: canvasElModel } ),
             cssElView     = new Sprite.View.CSSElement( { model: canvasElModel } );
@@ -286,7 +297,8 @@ Sprite.View.Document = Backbone.View.extend({
                 name: classname,
                 fileEntity: file,
                 x: x,
-                y: y
+                y: y,
+                index: Sprite.Collection.CanvasElements.length
             });
         }
     },

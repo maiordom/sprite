@@ -18,13 +18,14 @@ Sprite.View.CSSElement = Backbone.View.extend({
         params.width  = dta.w + 'px';
         params.height = dta.h + 'px';
         params[ 'background-position' ] = dta.x + 'px ' + dta.y + 'px';
-        dta[ 'id' ] = this.model.cid;
-        dta[ 'props' ] = params;
+        dta.id = this.model.cid;
+        dta.props = params;
 
         var tmpl = this.template( dta );
         this.el.innerHTML = tmpl;
         this.bgValue = this.$el.find( '.css-element-pair-background-position .css-element-value' );
-        this.el.setAttribute( 'data-id', dta[ 'id' ] );
+        this.el.setAttribute( 'data-id', dta.id );
+        this.el.setAttribute( 'data-index', dta.index );
         return this;
     }
 });

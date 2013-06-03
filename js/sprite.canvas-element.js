@@ -4,6 +4,7 @@ Sprite.Model.CanvasElement = Backbone.Model.extend({
         y: 0,
         w: 0,
         h: 0,
+        index: null,
         name: null,
         fileEntity: null,
         fileContent: null,
@@ -71,10 +72,13 @@ Sprite.Model.CanvasElement = Backbone.Model.extend({
         this.set( 'uuid', json.uuid );        
         this.setParamsToStorage({
             uuid: json.uuid,
-            token: json.token
+            token: json.token,
+            index: this.get( 'index' ),
+            w: this.get( 'w' ),
+            h: this.get( 'h' )
         });
         this.saveCoordsToStorage();
-        this.saveNameToStorage();
+        this.saveNameToStorage();        
         console.log( json );
     },
 
@@ -126,7 +130,7 @@ Sprite.Collection.CanvasElements = Backbone.Collection.extend({
             dataType: 'json',
             success: function( json ) {
                 if ( json.result === 'RESULT_OK' ) {
-                    location.href = 'server/zip/' + json.token + '.zip'
+                    location.href = 'server/zip/' + json.token + '.zip';
                 }
                 console.log( json );
             }
@@ -134,12 +138,12 @@ Sprite.Collection.CanvasElements = Backbone.Collection.extend({
     },
 
     prepareDataToCreateCanvas: function( canvasWidth, canvasHeight ) {
-        var reqData = [];
+        var reqData = [], params = _( [ 'token', 'x', 'y', 'name', 'w', 'h' ] );
 
         this.each( function( elModel, index ) {
-            reqData.push( 'token' + index + '=' + elModel.get( 'token' ) );
-            reqData.push( 'x'     + index + '=' + elModel.get( 'x' ) );
-            reqData.push( 'y'     + index + '=' + elModel.get( 'y' ) );
+            params.each( function( value ) {
+                reqData.push( value + index + '=' + elModel.get( value ) );
+            });
         });
 
         reqData.push( 'width='  + canvasWidth );
