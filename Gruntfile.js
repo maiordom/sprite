@@ -2,17 +2,34 @@ module.exports = function( grunt ) {
     grunt.initConfig({
         concat: {
             js: {
+                sprite: {
+                    src: [
+                        'js/sprite.canvas.js',
+                        'js/sprite.document.js',
+                        'js/sprite.resize.js',
+                        'js/sprite.canvas-element.js',
+                        'js/sprite.global.js',
+                        'js/sprite.css-element.js',
+                        'js/sprite.test.js',
+                        'js/sprite.js'
+                    ],
+                    dest: 'bundle/sprite.all.js'
+                },
+                libs: {
+                    src: [
+                        'js/libs/scrollpane/jquery.jscrollpane.js',
+                        'js/libs/scrollpane/jquery.mousewheel.js'
+                    ],
+                    dest: 'bundle/libs.all.js'
+                }
+            },
+            css: {
                 src: [
-                    'js/sprite.canvas.js',
-                    'js/sprite.document.js',
-                    'js/sprite.resize.js',
-                    'js/sprite.canvas-element.js',
-                    'js/sprite.global.js',
-                    'js/sprite.css-element.js',
-                    'js/sprite.test.js',
-                    'js/sprite.js'
+                    'css/fontello.css',
+                    'css/jquery.jscrollpane.css',
+                    'css/sprite.css'
                 ],
-                dest: 'bundle/sprite.all.js'
+                dest: 'bundle/sprite.all.css'
             }
         },
 
@@ -20,6 +37,10 @@ module.exports = function( grunt ) {
             js: {
                 src: '<%= concat.js.dest %>',
                 dest: 'bundle/sprite.min.js'
+            },
+            css: {
+                src: '<%= concat.css.dest %>',
+                dest: 'bundle/sprite.min.css'
             }
         }
     });
