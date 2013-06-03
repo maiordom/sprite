@@ -4,3 +4,4 @@ RewriteRule ^api/ server/api.php
 
 DirectoryIndex index.html
 AddType application/octet-stream .zip
+Options -Indexes
