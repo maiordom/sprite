@@ -66,6 +66,10 @@ BODY {
     margin-left: 350px;
 }
 
+.workspace-short {
+    margin-left: 177px;
+}
+
 .panel {
     height: 45px;
 }
@@ -325,7 +329,50 @@ BODY {
     margin-top: 14px;
 }
 
-.css-element-classname {    
+.css-view-scroll {
+    width: 350px !important;
+}
+
+.css-view-box-short {
+    width: 177px;
+}
+
+.css-view-box-short .css-view-scroll {
+    width: 177px !important;
+    font-size: 12px;
+}
+
+.css-view-box-short .icon-left {
+    display: none;
+}
+
+.css-view-box-short .icon-right {
+    display: block !important;
+}
+
+.css-view-box-short .css-element-title {
+    -o-text-overflow: ellipsis;    
+    text-overflow: ellipsis;
+    max-width: 135px;
+    display: block;
+    overflow: hidden;
+    float: left;
+    margin-right: 5px;
+}
+
+.css-view-box-short .css-description-header {
+    font-size: 16px;
+}
+
+.css-panel-icon.icon-right {
+    margin-right: -2px;
+    display: none;
+}
+
+.css-view-box-short .css-element-classname {
+    width: 159px;
+    white-space: nowrap;
+    overflow: hidden;
 }
 
 /* End | CSS - View - Box */

@@ -59,6 +59,39 @@ Sprite.Model.CanvasElement = Backbone.Model.extend({
         });
     },
 
+    loadFileFromStorage: function() {
+        var img = this.get( 'fileEntity' ), self = this;
+
+        img.onerror = function() {
+            self.trigger( 'errorLoadFile' );
+        };
+
+        img.src = this.get( 'fileContent' );
+    },
+
+    readFile: function() {
+        var reader = new FileReader(), self = this;
+        
+        reader.onload = function( e ) {
+            var img = document.createElement( 'img' );
+            img.onload = function() {
+                self.setFileParams( this );
+                self.save();
+            };
+            img.src = e.target.result;
+        };
+
+        reader.readAsDataURL( this.get( 'fileEntity' ) );
+    },
+
+    setFileParams: function( img ) {
+        this.set({
+            w: img.width,
+            h: img.height,
+            fileContent: img.src
+        });
+    },
+
     save: function() {
         var self = this,
             xhr = new XMLHttpRequest();
@@ -90,37 +123,6 @@ Sprite.Model.CanvasElement = Backbone.Model.extend({
         this.saveNameToStorage();
         this.trigger( 'onloadFile' );
         console.log( json );
-    },
-
-    onLocalLoadFile: function( e, img ) {
-        this.set({
-            w: e.target.width,
-            h: e.target.height,
-            fileContent: img.src
-        });
-    },
-
-    readFile: function() {
-        var reader = new FileReader(), self = this;
-        
-        reader.onload = function( e ) {
-            var img = document.createElement( 'img' );
-            img.onload = function() {
-                self.setFileParams( this );
-                self.save();
-            };
-            img.src = e.target.result;
-        };
-
-        reader.readAsDataURL( this.get( 'fileEntity' ) );
-    },
-
-    setFileParams: function( img ) {
-        this.set({
-            w: img.width,
-            h: img.height,
-            fileContent: img.src
-        });
     },
 
     prepareDataToCreateImage: function() {
@@ -186,6 +188,10 @@ Sprite.View.CanvasElement = Backbone.View.extend({
 
         this.model.on( 'remove', function() {
             self.remove();
+        });
+
+        this.model.on( 'errorLoadFile', function() {
+            self.el.style.background = '#ccc';
         });
     },
 

@@ -7,6 +7,7 @@ Sprite.Global = Backbone.Model.extend({
         }
     },
 
+    /* only for .apply */
     setRectParams: function( w, h ) {
         this.rect.xmax = this.rect.x + w;
         this.rect.ymax = this.rect.y + h;
@@ -62,6 +63,8 @@ Sprite.Global = Backbone.Model.extend({
         });
 
         _( data ).each( function( item ) {
+            item.fileEntity  = new Image();
+            item.fileContent = 'server/cache/' + item.token + '.png';
             callback( item );
         });
     },

@@ -5,6 +5,7 @@ Sprite.View.CSSElement = Backbone.View.extend({
 
     initialize: function() {
         var self = this;
+
         this.model.on( 'dragmove', function() {
             var bgValue = self.model.get( 'x' ) + 'px ' + self.model.get( 'y' ) + 'px';
             self.bgValue.html( bgValue );
@@ -13,6 +14,26 @@ Sprite.View.CSSElement = Backbone.View.extend({
         this.model.on( 'remove', function() {
             self.remove();
         });
+
+        this.model.on( 'set_short_state', function() {
+            self.setShortState();
+        });
+
+        this.model.on( 'set_default_state', function() {
+            self.setDefaultState();
+        });
+    },
+
+    setShortState: function() {
+        this.$el.find( '.css-element-pair-width .css-element-key' ).text( 'w' );
+        this.$el.find( '.css-element-pair-height .css-element-key' ).text( 'h' );
+        this.$el.find( '.css-element-pair-background-position .css-element-key' ).text( 'bp' );
+    },
+
+    setDefaultState: function() {
+        this.$el.find( '.css-element-pair-width .css-element-key' ).text( 'width' );
+        this.$el.find( '.css-element-pair-height .css-element-key' ).text( 'height' );
+        this.$el.find( '.css-element-pair-background-position .css-element-key' ).text( 'background-position' );
     },
 
     render: function() {

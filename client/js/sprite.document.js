@@ -22,18 +22,16 @@ Sprite.View.Document = Backbone.View.extend({
         this.OuterCanvas.render();
         this.Resize.render();
 
-        this.setCSSScrollParams( 350, this.win.height() - this.cssDesc.height() );
+        this.setCSSScrollHeight( this.win.height() - this.cssDesc.height() );
         this.setCSSScrollPane();
+        this.readStorage();
+    },
+
+    readStorage: function() {
+        var self = this;
 
         this.model.readElsInStorage( function( modelData ) {
-            var src = 'server/cache/' + modelData.token + '.png';
-            self.createImg( src, function( img ) {
-                _( modelData ).extend({
-                    fileEntity: img,
-                    fileContent: img.src
-                });
-                self.createElement( modelData );
-            });
+            self.createElement( modelData );
         });
 
         this.model.readParamsInStorage( function( w, h ) {
@@ -52,7 +50,9 @@ Sprite.View.Document = Backbone.View.extend({
         this.win          = $( window );
         this.doc          = $( document );
         this.body         = $( 'body' );
+        this.workspace    = $( '.workspace' );
         this.canvasElZone = $( '.canvas-elements-zone' );
+        this.cssBox       = $( '.css-view-box' );
         this.cssScroll    = $( '.css-view-scroll' );
         this.cssInner     = $( '.css-view-inner' );
         this.cssDesc      = $( '.css-description' );
@@ -103,6 +103,28 @@ Sprite.View.Document = Backbone.View.extend({
     },
 
     bindCssInnerEvents: function( self ) {
+        this.cssDesc.on( 'click', '.css-panel-state .icon-left', function() {
+            self.cssBox.addClass( 'css-view-box-short' );
+            self.workspace.addClass( 'workspace-short' );
+            self.setElStartPoint();
+            self.setElParams( self.model.get( 'rect' ).w, self.model.get( 'rect' ).h );
+            self.setCSSScrollPane();
+            Sprite.Collection.CanvasElements.each( function( model ) {
+                model.trigger( 'set_short_state' );
+            });
+        });
+
+        this.cssDesc.on( 'click', '.css-panel-state .icon-right', function() {
+            self.cssBox.removeClass( 'css-view-box-short' );
+            self.workspace.removeClass( 'workspace-short' );
+            self.setElStartPoint();
+            self.setElParams( self.model.get( 'rect' ).w, self.model.get( 'rect' ).h );
+            self.setCSSScrollPane();
+            Sprite.Collection.CanvasElements.each( function( model ) {
+                model.trigger( 'set_default_state' );
+            });
+        });
+
         this.cssInner.on( 'mousedown', '.css-element', function() {
             self.onCSSElClick( this );
         });
@@ -230,32 +252,18 @@ Sprite.View.Document = Backbone.View.extend({
     },
 
     onWinResize: function() {
-        this.setCSSScrollParams( 350, this.win.height() - this.cssDesc.height() );
+        this.setCSSScrollHeight( this.win.height() - this.cssDesc.height() );
         this.setCSSScrollPane();
     },
 
-    setCSSScrollParams: function( w, h ) {
-        this.cssScroll.css({
-            width: w,
-            height: h
-        });        
+    setCSSScrollHeight: function( h ) {
+        this.cssScroll.height( h );
     },
 
     setCSSScrollPane: function() {
         this.cssScroll.jScrollPane({
             verticalGutter: 0
         });
-    },
-
-    createImg: function( src, callback, error ) {        
-        var img = new Image();
-        img.onload = function() {
-            callback && callback( img );
-        };
-        img.onerror = function() {
-            error && error( img );
-        };
-        img.src = src;
     },
 
     createElement: function( modelParams ) {
@@ -272,6 +280,7 @@ Sprite.View.Document = Backbone.View.extend({
                 self.onLoadFile( canvasElView, cssElView );
             });          
         } else {
+            canvasElModel.loadFileFromStorage();
             this.onLoadFile( canvasElView, cssElView );
         }
     },
@@ -320,7 +329,7 @@ Sprite.View.Document = Backbone.View.extend({
 
         this.nullfunc( e );
         this.model.readFiles( files, xPos, yPos, function( modelParams ) {
-            slef.createElement( modelParams );
+            self.createElement( modelParams );
         });        
     }
 });
