@@ -1,0 +1,3 @@
+Sprite.Test = function() {
+
+};

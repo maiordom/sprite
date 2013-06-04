@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Sprite</title>
+    <link rel="stylesheet" href="css/sprite.css">
+    <link rel="stylesheet" href="css/jquery.jscrollpane.css">
+    <link rel="stylesheet" href="css/fontello.css">
+</head>
+
+<body>
+
+    <div class="wrapper clearfix">
+
+        <div class="css-view-box">
+
+            <div class="css-description">
+                <h1 class="css-description-header">CSS Panel</h1>
+                <div class="css-panel-state">
+                    <div class="css-panel-icon icon-left"></div>
+                </div>                
+            </div>
+
+            <div class="css-view-scroll">
+                <div class="css-view-inner clearfix"></div>
+            </div>
+
+        </div>
+
+        <div class="workspace">
+
+            <div class="panel">
+
+                <div class="btn-new-doc panel-btn">
+                    <i class="panel-btn-key icon-doc"></i>
+                    <span class="panel-btn-value">New document</span>
+                </div>
+
+                <div class="btn-download panel-btn">
+                    <i class="panel-btn-key icon-download"></i>
+                    <span class="panel-btn-value">Download sprite</span>
+                </div>
+
+                <div class="btn-upload panel-btn">
+
+                    <i class="panel-btn-key icon-upload"></i>
+                    <span class="panel-btn-value">Upload files</span>
+
+                    <form class="form form-upload" action="/upload" method="POST">
+                        <input class="field-file" type="file" multiple="multiple">
+                    </form>
+
+                </div>
+
+            </div>
+
+            <div class="canvas-box">
+                <div class="canvas-elements-wrapper">
+                    <div class="canvas-elements-zone"></div>
+                </div>
+                <div class="canvas-fake-box">
+                    <div class="canvas-fake-border"></div>
+                    <div class="canvas-fake-params"></div>
+                    <i class="canvas-resize icon-resize-full"></i>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script type="text/template" id="tmpl-css-element">
+    <div class="css-element-classname">
+        <span class="css-element-dot">.</span>
+        <span class="css-element-title"><%= name %></span>
+        <span class="css-element-brace-open">{</span>
+    </div>
+    <% for ( var key in props ) { %>
+    <div class="css-element-pair css-element-pair-<%= key %>">
+        <span class="css-element-key"><%= key %>:</span>
+        <span class="css-element-value"><%= props[key] %>;</span>
+    </div>
+    <% } %>
+    <span class="css-element-brace-close">}</span>
+    </script>
+
+    <!--
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.4/underscore-min.js"></script>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/backbone.js/1.0.0/backbone-min.js"></script>
+    -->
+
+    <script src="js/libs/jquery-1.8.3.js"></script>
+    <script src="js/libs/underscore-1.4.4.js"></script>
+    <script src="js/libs/backbone-1.0.0.js"></script>
+
+    <script src="js/libs/scrollpane/jquery.jscrollpane.js"></script>
+    <script src="js/libs/scrollpane/jquery.mousewheel.js"></script>
+
+    <script>
+        Sprite = {
+            View: {},
+            Model: {},
+            Collection: {}
+        };
+    </script>
+
+    <script src="js/sprite.canvas.js"></script>
+    <script src="js/sprite.document.js"></script>
+    <script src="js/sprite.resize.js"></script>
+    <script src="js/sprite.canvas-element.js"></script>
+    <script src="js/sprite.global.js"></script>
+    <script src="js/sprite.css-element.js"></script>
+    <script src="js/sprite.test.js"></script>
+    <script src="js/sprite.js"></script>
+    
+</body>
+
+</html>
