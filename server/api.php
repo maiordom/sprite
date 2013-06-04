@@ -1,10 +1,12 @@
 <?php
 
-Class Sprite {
-    var $imageMagickPath, $fileTypePattern;
+define( 'CACHE_DIR', $_SERVER[ 'DOCUMENT_ROOT' ] . '/server/cache/' );
+define( 'IMAGE_MAGICK', 'C:\ImageMagick\convert' );
 
-    function __construct() {
-        $this->imageMagickPath = 'C:\ImageMagick\convert';
+Class Sprite {
+    var $fileTypePattern;
+
+    function __construct() {        
         $this->fileTypePattern = '/data:image\/(jpeg|png|jpg|gif);base64,/';
         
         if ( !$this->isAvailableIM() ) {
@@ -31,7 +33,7 @@ Class Sprite {
     function isAvailableIM() {
         $out = Array();
         $err = -1;
-        exec( $this->imageMagickPath . ' -version', $out, $err );
+        exec( IMAGE_MAGICK . ' -version', $out, $err );
         return $err === 0;
     }
 
@@ -97,18 +99,22 @@ Class Sprite {
         for ( $i = 0, $len = count( $files ); $i < $len; $i++ ) {
             $type = $files[ $i ][ 'fileType' ];
             $uuid = $files[ $i ][ 'uuid' ];
-            $tempPath = 'cache/' . $uuid . '.' . $type;
+            $tempPath = CACHE_DIR . $uuid . '.' . $type;
             file_put_contents( $tempPath, $files[ $i ][ 'fileContent' ] );
             $fileHash = md5_file( $tempPath );
             $files[ $i ][ 'fileHash' ] = $fileHash;
-            $filePath = 'cache/' . $fileHash . '.png';
+            $filePath = CACHE_DIR . $fileHash . '.png';
 
             if ( $type !== 'png' ) {
-                $this->execCmd( $this->imageMagickPath . ' ' . $tempPath . ' ' . $filePath );
+                $this->execCmd( IMAGE_MAGICK . ' ' . $tempPath . ' ' . $filePath );
                 unlink( $tempPath );
                 $files[ $i ][ 'fileType' ] = 'png';
             } else {
-                rename( $tempPath, $filePath );
+                if ( is_file( $filePath ) === true ) {
+                    unlink( $tempPath );
+                } else {
+                    rename( $tempPath, $filePath );
+                }
             }
         }
     }
@@ -122,13 +128,13 @@ Class Sprite {
     }
 
     function getCmdToCreateSprite( $files = Array(), $sprite ) {
-        $IMC = $this->imageMagickPath . ' -page ' . $_REQUEST[ 'width' ] . 'x' . $_REQUEST[ 'height' ] . ' ';
+        $IMC = IMAGE_MAGICK . ' -page ' . $_REQUEST[ 'width' ] . 'x' . $_REQUEST[ 'height' ] . ' ';
 
         for ( $i = 0, $len = count( $files ); $i < $len; $i++ ) {          
-            $IMC .= '-page ' . '+' . $files[ $i ][ 'x' ] . '+' . $files[ $i ][ 'y' ] . ' cache/' . $files[ $i ][ 'fileHash' ] . '.png ';
+            $IMC .= '-page ' . '+' . $files[ $i ][ 'x' ] . '+' . $files[ $i ][ 'y' ] . ' ' . CACHE_DIR . $files[ $i ][ 'fileHash' ] . '.png ';
         }
 
-        return $IMC . '-background transparent -flatten cache/' . $sprite . '.png';
+        return $IMC . '-background transparent -flatten ' . CACHE_DIR . $sprite . '.png';
     }
 
     function createImageHandle() {
@@ -160,15 +166,21 @@ Class Sprite {
             $token = md5( $this->getSumHash( $files ) );
             $cmd = $this->getCmdToCreateSprite( $files, $token );
             $this->execCmd( $cmd );
-            $this->createSpriteCSS( $token, $files, 'css', ';', true );
+            $this->createSpriteCSS( $token, $files, 'css', ';', true  );
             $this->createSpriteCSS( $token, $files, 'styl', '', false );
-            $this->createSpriteZip( $token );
+            $zip = $this->createSpriteZip( $token );
             $this->removeZipItems( $token );
 
-            echo json_encode( Array(
-                'result' => 'RESULT_OK',
-                'token' => $token
-            ));
+            if ( $zip === false ) {
+                echo json_encode( Array(
+                    'result' => 'ERROR_NOT_AVAILABLE_ZIP'
+                ));
+            } else {
+                echo json_encode( Array(
+                    'result' => 'RESULT_OK',
+                    'token' => $token
+                ));
+            }
         }
     }
 
@@ -177,20 +189,20 @@ Class Sprite {
         $fileName = 'zip/' . $token . '.zip';
 
         if ( $zip->open( $fileName, ZIPARCHIVE::CREATE ) !== true ) {
-            fwrite( STDERR, 'Error while creating archive file' );
-            exit( 0 );
+            return false;
         }
 
-        $zip->addFile( 'cache/' . $token . '.png',  $token . '.png'  );
-        $zip->addFile( 'cache/' . $token . '.css',  $token . '.css'  );
-        $zip->addFile( 'cache/' . $token . '.styl', $token . '.styl' );
+        $zip->addFile( CACHE_DIR . $token . '.png',  $token . '.png'  );
+        $zip->addFile( CACHE_DIR . $token . '.css',  $token . '.css'  );
+        $zip->addFile( CACHE_DIR . $token . '.styl', $token . '.styl' );
         $zip->close();
+        return true;
     }
 
     function removeZipItems( $token ) {
-        $this->removeFile( 'cache/' . $token . '.png'  );
-        $this->removeFile( 'cache/' . $token . '.css'  );
-        $this->removeFile( 'cache/' . $token . '.styl' );
+        $this->removeFile( CACHE_DIR . $token . '.png'  );
+        $this->removeFile( CACHE_DIR . $token . '.css'  );
+        $this->removeFile( CACHE_DIR . $token . '.styl' );
     }
 
     function removeFile( $file ) {
@@ -198,15 +210,21 @@ Class Sprite {
     }
 
     function createSpriteCSS( $token, $files, $type, $sem, $braces = true ) {
-        $f = fopen( 'cache/' . $token . '.' . $type, 'w' );
+        $f = fopen( CACHE_DIR . $token . '.' . $type, 'w' );
 
         for ( $i = 0, $len = count( $files ); $i < $len; $i++ ) {
             $o = $files [ $i ];
             fwrite( $f, '.' . $o[ 'name' ] . ( $braces ? ' {' : '' ) . PHP_EOL );
-            fwrite( $f, '    width: ' . $o[ 'w' ] . 'px' . $sem . PHP_EOL );
+            fwrite( $f, '    width: '  . $o[ 'w' ] . 'px' . $sem . PHP_EOL );
             fwrite( $f, '    height: ' . $o[ 'h' ] . 'px' . $sem . PHP_EOL );
             fwrite( $f, '    background-position: ' . $o[ 'x' ] . 'px ' . $o[ 'y' ] . 'px' . $sem . PHP_EOL );
-            fwrite( $f, ( $braces ? '}' : '' ) . PHP_EOL );
+
+            if ( $braces )  {
+                fwrite( $f, '}' . PHP_EOL );
+            } else {
+                $i < $len - 1 ?
+                    fwrite( $f, PHP_EOL ) : null;
+            }
         }
 
         fclose( $f );

@@ -1,3 +1,0 @@
-Sprite.Test = function() {
-
-};

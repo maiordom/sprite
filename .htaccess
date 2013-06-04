@@ -2,6 +2,11 @@ RewriteEngine on
 RewriteBase /
 RewriteRule ^api/ server/api.php
 
-DirectoryIndex index.html
+RewriteRule ^css/(.*)    client/css/$1
+RewriteRule ^js/(.*)     client/js/$1
+RewriteRule ^images/(.*) client/images/$1
+
+DirectoryIndex client/index.html
 AddType application/octet-stream .zip
 Options -Indexes
+AddDefaultCharset utf-8

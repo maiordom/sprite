@@ -17,6 +17,9 @@ module.exports = function( grunt ) {
                 },
                 libs: {
                     src: [
+                        'js/libs/jquery-1.8.3.js',
+                        'js/libs/underscore-1.4.4.js',
+                        'js/libs/backbone-1.0.0.js',
                         'js/libs/scrollpane/jquery.jscrollpane.js',
                         'js/libs/scrollpane/jquery.mousewheel.js'
                     ],
