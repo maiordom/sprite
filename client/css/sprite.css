@@ -254,14 +254,7 @@ BODY {
 
 .css-element-hover,
 .css-element-selected {
-    background: #ffdfdf; /* Old browsers */
-    background: -moz-linear-gradient(top,  #ffe8e8 0%, #ffdfdf 100%); /* FF3.6+ */
-    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#ffe8e8), color-stop(100%,#ffdfdf)); /* Chrome,Safari4+ */
-    background: -webkit-linear-gradient(top,  #ffe8e8 0%,#ffdfdf 100%); /* Chrome10+,Safari5.1+ */
-    background: -o-linear-gradient(top,  #ffe8e8 0%,#ffdfdf 100%); /* Opera 11.10+ */
-    background: -ms-linear-gradient(top,  #ffe8e8 0%,#ffdfdf 100%); /* IE10+ */
-    background: linear-gradient(to bottom,  #ffe8e8 0%,#ffdfdf 100%); /* W3C */
-    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffe8e8', endColorstr='#ffdfdf',GradientType=0 ); /* IE6-9 */
+    background: #fff; /* Old browsers */
 }
 
 .css-element-dot {
@@ -269,7 +262,7 @@ BODY {
 }
 
 .css-element {
-    padding: 5px;
+    padding: 5px 2px 5px 2px;
 }
 
 .css-element-pair {
@@ -350,14 +343,18 @@ BODY {
     display: block !important;
 }
 
-.css-view-box-short .css-element-title {
-    -o-text-overflow: ellipsis;    
+.css-element-title {
+    -o-text-overflow: ellipsis;
     text-overflow: ellipsis;
-    max-width: 135px;
     display: block;
     overflow: hidden;
     float: left;
+    max-width: 310px;
     margin-right: 5px;
+}
+
+.css-view-box-short .css-element-title {
+    max-width: 135px;
 }
 
 .css-view-box-short .css-description-header {
@@ -371,8 +368,46 @@ BODY {
 
 .css-view-box-short .css-element-classname {
     width: 159px;
+}
+
+.css-view-box-short .css-element-field {
+    width: 153px;
+}
+
+.css-element-classname {
     white-space: nowrap;
     overflow: hidden;
+    float: left;
+    padding: 0 3px 0 3px;
+
+    background: -webkit-gradient(linear, 0 0, 0 100%, from(rgba(255, 255, 255, .35)), to(rgba(255, 255, 255, 0)));
+    background: -webkit-linear-gradient(rgba(255, 255, 255, .35), rgba(255, 255, 255, 0));
+    background: -moz-linear-gradient(rgba(255, 255, 255, .35), rgba(255, 255, 255, 0));
+    background: -o-linear-gradient(rgba(255, 255, 255, .35), rgba(255, 255, 255, 0));
+    background: linear-gradient(rgba(255, 255, 255, .35), rgba(255, 255, 255, 0));
+}
+
+.css-element-clear {
+    clear: both;
+}
+
+.css-element-classname:hover {
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+    border-radius: 10px;
+    cursor: pointer;
+    background-color: #8dacef;
+}
+
+.css-element-field {
+    width: 327px;
+    padding: 0 5px;
+    height: 16px;
+    line-height: 13px;
+    border: 1px solid #abadb3;
+    outline: none;
+    font-size: 13px;
+    font-family: monospace, sans-serif;
 }
 
 /* End | CSS - View - Box */

@@ -20,6 +20,10 @@ Sprite.Model.CanvasElement = Backbone.Model.extend({
         this.on( 'remove', function() {
             self.get( 'xhr' ).abort();
         });
+
+        this.on( 'change:name', function() {
+            self.saveNameToStorage();
+        });
     },
 
     isEntityFile: function() {
