@@ -4,14 +4,14 @@ module.exports = function( grunt ) {
             js: {
                 sprite: {
                     src: [
-                        'js/sprite.canvas.js',
-                        'js/sprite.document.js',
-                        'js/sprite.resize.js',
-                        'js/sprite.canvas-element.js',
-                        'js/sprite.global.js',
-                        'js/sprite.css-element.js',
-                        'js/sprite.test.js',
-                        'js/sprite.js'
+                        'js/src/sprite.canvas.js',
+                        'js/src/sprite.document.js',
+                        'js/src/sprite.resize.js',
+                        'js/src/sprite.canvas-element.js',
+                        'js/src/sprite.global.js',
+                        'js/src/sprite.css-element.js',
+                        'js/src/sprite.test.js',
+                        'js/src/sprite.js'
                     ],
                     dest: 'bundle/sprite.all.js'
                 },

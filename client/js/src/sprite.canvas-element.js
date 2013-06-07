@@ -10,6 +10,7 @@ Sprite.Model.CanvasElement = Backbone.Model.extend({
         fileContent: null,
         token: null,
         uuid: null,
+        xhrTimeout: null,
         xhr: {
             abort: function() {}
         }
@@ -18,7 +19,9 @@ Sprite.Model.CanvasElement = Backbone.Model.extend({
     initialize: function() {
         var self = this;
         this.on( 'remove', function() {
+            self.removeModelParamsFromStorage();
             self.get( 'xhr' ).abort();
+            clearTimeout( self.get( 'xhrTimeout' ) );
         });
 
         this.on( 'change:name', function() {
@@ -63,11 +66,26 @@ Sprite.Model.CanvasElement = Backbone.Model.extend({
         });
     },
 
+    removeModelParamsFromStorage: function() {
+        this.hasUuid( function( uuid ) {
+            var data = localStorage[ 'sprite' ];
+            data = data ? JSON.parse( data ) : {};
+
+            try {
+                delete data[ uuid ];
+            } catch( e ) {
+                throw 'Nothing to delete';
+            }
+
+            localStorage.setItem( 'sprite', JSON.stringify( data ) );
+        });
+    },
+
     loadFileFromStorage: function() {
         var img = this.get( 'fileEntity' ), self = this;
 
         img.onerror = function() {
-            self.trigger( 'errorLoadFile' );
+            self.trigger( 'onLoadFileError' );
         };
 
         img.src = this.get( 'fileContent' );
@@ -80,7 +98,7 @@ Sprite.Model.CanvasElement = Backbone.Model.extend({
             var img = document.createElement( 'img' );
             img.onload = function() {
                 self.setFileParams( this );
-                self.save();
+                self.uploadFile();
             };
             img.src = e.target.result;
         };
@@ -96,26 +114,53 @@ Sprite.Model.CanvasElement = Backbone.Model.extend({
         });
     },
 
-    save: function() {
+    uploadFile: function() {
         var self = this,
-            xhr = new XMLHttpRequest();
+            xhr = new XMLHttpRequest(), json, xhrTimeout;
 
         xhr.onreadystatechange = function() {
             if ( xhr.readyState === 4 ) {
+                clearTimeout( self.get( 'xhrTimeout' ) );
+
                 if ( xhr.status === 200 ) {
-                    self.onSuccessSave( JSON.parse( xhr.responseText ) );
+                    try {
+                        json = JSON.parse( xhr.responseText );    
+                    } catch( e ) {
+                        json = { result: 'ERROR_PARSE_JSON' };
+                        self.trigger( 'onUploadFileError', json );
+                    }
+
+                    if ( json.result === 'RESULT_OK' ) {
+                        self.onUploadSuccess( json );
+                        self.trigger( 'onUploadFileSuccess', json );
+                    } else {
+                        self.trigger( 'onUploadFileError', json );
+                    }
+
+                } else {
+                    json = { result: 'ERROR_XHR' };
+                    self.trigger( 'onUploadFileError', json );
                 }
             }
         };
+
+        xhrTimeout = setTimeout( function() {
+            xhr.abort();
+            json = { result: 'ERROR_REQUEST_TIMEOUT' };
+            self.trigger( 'onUploadFileError', json );
+        }, 30000 );
         
         xhr.open( 'POST', '/api/create_image', true );
-        xhr.send( this.prepareDataToCreateImage() );
+        xhr.send( this.prepareDataToUploadFile() );
+        
         this.set( 'xhr', xhr );
+        this.set( 'xhrTimeout', xhrTimeout );
     },
 
-    onSuccessSave: function( json ) {
+    onUploadSuccess: function( json ) {
         this.set( 'token', json.token );
-        this.set( 'uuid', json.uuid );        
+        this.set( 'uuid', json.uuid );
+
         this.setParamsToStorage({
             uuid: json.uuid,
             token: json.token,
@@ -123,13 +168,12 @@ Sprite.Model.CanvasElement = Backbone.Model.extend({
             w: this.get( 'w' ),
             h: this.get( 'h' )
         });
+
         this.saveCoordsToStorage();
         this.saveNameToStorage();
-        this.trigger( 'onloadFile' );
-        console.log( json );
     },
 
-    prepareDataToCreateImage: function() {
+    prepareDataToUploadFile: function() {
         var modelData = this.toJSON(), formData = new FormData();
         
         formData.append( 'fileContent', modelData.fileContent );
@@ -194,7 +238,7 @@ Sprite.View.CanvasElement = Backbone.View.extend({
             self.remove();
         });
 
-        this.model.on( 'errorLoadFile', function() {
+        this.model.on( 'onLoadFileError', function() {
             self.el.style.background = '#ccc';
         });
     },

@@ -21,7 +21,7 @@ Sprite.Global = Backbone.Model.extend({
         localStorage.removeItem( 'sprite' );
     },
 
-    readFiles: function( files, x, y, callback ) {
+    readFiles: function( files, x, y, callback, error ) {
         var len = files.length, file, classname;
 
         for ( var i = 0; i < len; i++ ) {
@@ -34,12 +34,25 @@ Sprite.Global = Backbone.Model.extend({
                 classname = 'f-' + classname;
             }
 
-            callback({
+            if ( file.type.search( 'png|gif|jpeg|jpg' ) === -1 ) {
+                error && error({
+                    fileName: file.name,
+                    msg: 'You may upload file only with type image'
+                });
+                continue;
+            } else if ( file.size / 1024 > 256 ) {
+                error && error({
+                    fileName: file.name,
+                    msg: 'You may upload file only with size less then 256kb' 
+                });
+                continue;
+            }
+
+            callback && callback({
                 x: x,
                 y: y,
                 fileEntity: file,
-                name: classname,
-                index: Sprite.Collection.CanvasElements.length
+                name: classname
             });
         }
     },

@@ -51,7 +51,7 @@ Sprite.View.Resize = Backbone.View.extend({
     },
 
     dragEngine: function( e ) {
-        var rect = this.model.toJSON().rect, self = this;
+        var rect = _( this.model.get( 'rect' ) ).clone(), self = this;
 
         this.rect = rect;
         this.isDragged = true;

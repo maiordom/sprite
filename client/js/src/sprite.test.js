@@ -1,3 +1,2 @@
 Sprite.Test = function() {
-
 };

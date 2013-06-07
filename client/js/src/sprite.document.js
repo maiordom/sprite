@@ -28,11 +28,13 @@ Sprite.View.Document = Backbone.View.extend({
     },
 
     readStorage: function() {
-        var self = this;
+        var self = this, queue = [];
 
         this.model.readElsInStorage( function( modelData ) {
-            self.createCanvasElement( modelData );
+            queue.push( self.createSpriteElHandler( modelData ) );
         });
+
+        this.readQueue( queue );
 
         this.model.readParamsInStorage( function( w, h ) {
             self.setElParams( w, h );
@@ -73,8 +75,13 @@ Sprite.View.Document = Backbone.View.extend({
     },
 
     bindEvents: function() {
-        var self = this;
+        this.bindGlobalEvents( this );
+        this.bindPanelEvents( this );
+        this.bindCssInnerEvents( this );
+        this.bindCanvasElEvents( this );
+    },
 
+    bindGlobalEvents: function( self ) {
         this.model.on( 'resize:canvas-box', function( w, h ) {
             self.setElParams( w, h );
             self.InnerCanvas.setElParams( w, h ).render();
@@ -84,9 +91,14 @@ Sprite.View.Document = Backbone.View.extend({
 
         this.win.on( 'resize', _.bind( this.onWinResize, this ) );
 
-        this.bindPanelEvents( this );
-        this.bindCssInnerEvents( this );
-        this.bindCanvasElEvents( this );
+        $( document ).on ( $.browser.opera ? 'keypress' : 'keydown', function( e ) {
+            if ( e.keyCode === 46 && self.sldCanvasEl.length ) {
+                var id = self.sldCanvasEl.attr( 'data-id' ),
+                    elModel = Sprite.Collection.CanvasElements.get( id );
+
+                Sprite.Collection.CanvasElements.remove( elModel );
+            }
+        });
     },
 
     bindPanelEvents: function( self ) {
@@ -116,7 +128,7 @@ Sprite.View.Document = Backbone.View.extend({
             self.onCSSElClick( this );
         });
 
-        this.cssInner.on( 'keydown', '.css-element-field', function( e ) {
+        this.cssInner.on( $.browser.opera ? 'keypress' : 'keydown', '.css-element-field', function( e ) {
             if ( e.keyCode == 13 ) {
                 var props = self.setCSSElClsName( this );
                 self.changeCSSElClassName( props );
@@ -330,26 +342,40 @@ Sprite.View.Document = Backbone.View.extend({
         });
     },
 
-    createCanvasElement: function( modelParams ) {
-        var self = this,
-            canvasElModel = new Sprite.Model.CanvasElement( modelParams ),
-            canvasElView  = new Sprite.View.CanvasElement( { model: canvasElModel } ),
-            cssElView     = new Sprite.View.CSSElement( { model: canvasElModel } );
+    createSpriteElHandler: function( modelParams ) {
+        return function() {
+            modelParams.index = Sprite.Collection.CanvasElements.length;
 
-        Sprite.Collection.CanvasElements.add( canvasElModel );
+            var self = this,
+                def  = $.Deferred(),
+                canvasElModel = new Sprite.Model.CanvasElement( modelParams ),
+                canvasElView  = new Sprite.View.CanvasElement( { model: canvasElModel } ),
+                cssElView     = new Sprite.View.CSSElement( { model: canvasElModel } );
 
-        if ( canvasElModel.isEntityFile() ) {
-            canvasElModel.readFile();
-            canvasElModel.on( 'onloadFile', function() {
-                self.onLoadFile( canvasElView, cssElView );
-            });          
-        } else {
-            canvasElModel.loadFileFromStorage();
-            this.onLoadFile( canvasElView, cssElView );
+            Sprite.Collection.CanvasElements.add( canvasElModel );
+
+            if ( canvasElModel.isEntityFile() ) {
+                canvasElModel.readFile();
+                canvasElModel.on( 'onUploadFileSuccess', function( json ) {
+                    self.renderCanvasAndCSSEl( canvasElView, cssElView );
+                    def.resolve();
+                    console.log( json );
+                });
+                canvasElModel.on( 'onUploadFileError', function( json ) {
+                    def.reject();
+                    console.log( json );
+                });
+            } else {
+                canvasElModel.loadFileFromStorage();
+                this.renderCanvasAndCSSEl( canvasElView, cssElView );
+                def.resolve();
+            }
+
+            return def.promise();
         }
     },
 
-    onLoadFile: function( canvasElView, cssElView ) {
+    renderCanvasAndCSSEl: function( canvasElView, cssElView ) {
         canvasElView.render();
         cssElView.render();
 
@@ -377,23 +403,44 @@ Sprite.View.Document = Backbone.View.extend({
     },
 
     onSelectFiles: function( e ) {
-        var self = this;
+        var self = this, queue = [];
         this.model.readFiles( e.target.files, 0, 0, function( modelParams ) {
-            self.createCanvasElement( modelParams );
-        });
+            queue.push( self.createSpriteElHandler( modelParams ) );
+        }, this.onReadFileError );
 
+        this.readQueue( queue );
         e.target.value = '';
+    },
+
+    onReadFileError: function( ans ) {
+        console.log( ans );
+    },
+
+    readQueue: function( queue ) {
+        var self = this;
+
+        if ( !queue.length ) {
+            return false;
+        }
+
+        $.when( queue[ 0 ].apply( this ) ).always( function() {
+            queue.splice( 0, 1 );
+            self.readQueue( queue );
+        });
     },
 
     onDropfunc: function( e ) {
         var files = e.originalEvent.dataTransfer.files,
+            queue = [],
             self  = this,
             xPos  = Math.floor( e.originalEvent.clientX - this.rect.x ),
             yPos  = Math.floor( e.originalEvent.clientY - this.rect.y );
 
         this.nullfunc( e );
         this.model.readFiles( files, xPos, yPos, function( modelParams ) {
-            self.createCanvasElement( modelParams );
-        });        
+            queue.push( self.createSpriteElHandler( modelParams ) );
+        }, this.onReadFileError );
+
+        this.readQueue( queue );
     }
 });
