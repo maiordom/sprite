@@ -97,6 +97,7 @@ Sprite.View.Document = Backbone.View.extend({
                     elModel = Sprite.Collection.CanvasElements.get( id );
 
                 Sprite.Collection.CanvasElements.remove( elModel );
+                self.setCSSScrollPane();
             }
         });
     },
