@@ -10,6 +10,7 @@ module.exports = function( grunt ) {
                         'js/src/sprite.canvas-element.js',
                         'js/src/sprite.global.js',
                         'js/src/sprite.css-element.js',
+                        'js/src/sprite.css-panel.js',
                         'js/src/sprite.test.js',
                         'js/src/sprite.js'
                     ],

@@ -22,8 +22,8 @@ Sprite.View.Document = Backbone.View.extend({
         this.OuterCanvas.render();
         this.Resize.render();
 
-        this.setCSSScrollHeight( this.win.height() - this.cssDesc.height() );
-        this.setCSSScrollPane();
+        this.CSSPanel.setCSSScrollHeight( this.win.height() - this.CSSPanel.cssDesc.height() );
+        this.CSSPanel.setCSSScrollPane();
         this.readStorage();
     },
 
@@ -48,21 +48,16 @@ Sprite.View.Document = Backbone.View.extend({
         this.InnerCanvas  = new Sprite.View.CanvasInner({ model: new Sprite.Model.CanvasInner });
         this.OuterCanvas  = new Sprite.View.CanvasOuter({ model: new Sprite.Model.CanvasOuter });
         this.Resize       = new Sprite.View.Resize({ model: this.model });
+        this.CSSPanel     = new Sprite.View.CSSPanel({ model: this.model });
 
         this.win          = $( window );
         this.doc          = $( document );
         this.body         = $( 'body' );
         this.workspace    = $( '.workspace' );
         this.canvasElZone = $( '.canvas-elements-zone' );
-        this.cssBox       = $( '.css-view-box' );
-        this.cssScroll    = $( '.css-view-scroll' );
-        this.cssInner     = $( '.css-view-inner' );
-        this.cssDesc      = $( '.css-description' );
         this.wrapper      = $( '.wrapper' );
         this.panel        = $( '.panel' );
         this.sldCanvasEl  = $( {} );
-        this.sldCSSEl     = $( {} );
-        this.cssBlurStop  = false;      
 
         this.rect = {
             x: null, y: null, w: null, h: null, xmax: null, ymax: null
@@ -77,16 +72,38 @@ Sprite.View.Document = Backbone.View.extend({
     bindEvents: function() {
         this.bindGlobalEvents( this );
         this.bindPanelEvents( this );
-        this.bindCssInnerEvents( this );
         this.bindCanvasElEvents( this );
     },
 
     bindGlobalEvents: function( self ) {
+        /* generate Resize */
         this.model.on( 'resize:canvas-box', function( w, h ) {
             self.setElParams( w, h );
             self.InnerCanvas.setElParams( w, h ).render();
             self.OuterCanvas.setElParams( w, h ).render();
             self.model.setParamsInStorage( w, h );
+        });
+
+        /* generate CSSPanel */
+        this.model.on( 'select_canvas_el', function( id ) {
+            self.sldCanvasEl.removeClass( 'canvas-element-selected' );
+            self.sldCanvasEl = self.$el.find( '.canvas-element[data-id="' + id + '"]' ).addClass( 'canvas-element-selected' );
+        });
+
+        /* generate CSSPanel */
+        this.model.on( 'canvas_element_hover', function( id ) {
+            self.canvasElZone.find( '.canvas-element[data-id="' + id + '"]' ).addClass( 'canvas-element-hover' );
+        });
+
+        /* generate CSSPanel */
+        this.model.on( 'canvas_element_unhover', function( id ) {
+            self.canvasElZone.find( '.canvas-element[data-id="' + id + '"]' ).removeClass( 'canvas-element-hover' );
+        });
+
+        /* generate CSSPanel */
+        this.model.on( 'change_panel_state', function() {
+            self.setElStartPoint();
+            self.setElParams( self.model.get( 'rect' ).w, self.model.get( 'rect' ).h );
         });
 
         this.win.on( 'resize', _.bind( this.onWinResize, this ) );
@@ -97,7 +114,7 @@ Sprite.View.Document = Backbone.View.extend({
                     elModel = Sprite.Collection.CanvasElements.get( id );
 
                 Sprite.Collection.CanvasElements.remove( elModel );
-                self.setCSSScrollPane();
+                self.CSSPanel.setCSSScrollPane();
             }
         });
     },
@@ -116,51 +133,6 @@ Sprite.View.Document = Backbone.View.extend({
         });
     },
 
-    bindCssInnerEvents: function( self ) {
-        this.cssDesc.on( 'click', '.css-panel-state .icon-left', function() {
-            self.setCSSPanelShortState();
-        });
-
-        this.cssDesc.on( 'click', '.css-panel-state .icon-right', function() {
-            self.setCSSPanelDefaultState();
-        });
-
-        this.cssInner.on( 'mousedown', '.css-element', function() {
-            self.onCSSElClick( this );
-        });
-
-        this.cssInner.on( $.browser.opera ? 'keypress' : 'keydown', '.css-element-field', function( e ) {
-            if ( e.keyCode == 13 ) {
-                var props = self.setCSSElClsName( this );
-                self.changeCSSElClassName( props );
-            } else if ( e.keyCode === 27 ) {
-                self.setCSSElClsName( this, null );
-            }
-        });
-
-        this.cssInner.on( 'click', '.css-element-classname', function() {
-            self.createCSSField( this );
-        });
-
-        this.cssInner.on( 'blur', '.css-element-field', function() {
-            if ( !self.cssBlurStop ) {
-                self.setCSSElClsName( this, null );
-            }
-        });
-
-        this.cssInner.on( 'mouseenter', '.css-element', function() {
-            var el = $( this ), id = el.data( 'id');
-            el.addClass( 'css-element-hover' );
-            self.canvasElZone.find( '.canvas-element[data-id="' + id + '"]' ).addClass( 'canvas-element-hover' );
-        });
-
-        this.cssInner.on( 'mouseleave', '.css-element', function() {
-            var el = $( this ), id = el.data( 'id' );
-            el.removeClass( 'css-element-hover' );
-            self.canvasElZone.find( '.canvas-element[data-id="' + id + '"]' ).removeClass( 'canvas-element-hover' );
-        });
-    },
-
     bindCanvasElEvents: function( self ) {
         this.$el.on( 'mousedown', '.canvas-element', function( e ) {
             self.onCanvasElClick( this );
@@ -174,92 +146,22 @@ Sprite.View.Document = Backbone.View.extend({
         this.$el.on( 'mouseenter', '.canvas-element', function() {
             var el = $( this ), id = el.data( 'id');
             el.addClass( 'canvas-element-hover' );
-            self.cssInner.find( '.css-element[data-id="' + id + '"]' ).addClass( 'css-element-hover' );
+            self.CSSPanel.setHoverStateToEl( id );
         });
 
         this.$el.on( 'mouseleave', '.canvas-element', function() {
             var el = $( this ), id = el.data( 'id' );
             el.removeClass( 'canvas-element-hover' );
-            self.cssInner.find( '.css-element[data-id="' + id + '"]' ).removeClass( 'css-element-hover' );
+            self.CSSPanel.setUnhoverStateToEl( id );
         });
     },
-
-    createCSSField: function( _target ) {
-        var target = $( _target ),
-            title  = target.find( '.css-element-title' ),
-            field  = $( '<input class="css-element-field">' );
-
-        field.insertAfter( target );
-        target.hide();
-        field.val( title.text() ).focus();
-    },
-
-    setCSSElClsName: function( _field, val ) {
-        var field  = $( _field ),
-            cssEl  = field.closest( '.css-element' ),
-            _val   = field.val(),
-            target = field.siblings( '.css-element-classname' ),
-            name   = target.find( '.css-element-title' );
-
-        target.show();
-        this.cssBlurStop = true;
-        field.remove();
-        this.cssBlurStop = false;
-
-        if ( val === undefined ) {
-            name.text( _val );
-            return {
-                val: _val,
-                modelId: cssEl.data( 'id' )
-            };
-        }
-    },
-
-    changeCSSElClassName: function( props ) {
-        var elModel = Sprite.Collection.CanvasElements.get( props.modelId );
-        elModel.set( 'name', props.val );
-    },
-
-    setCSSPanelShortState: function() {
-        this.cssBox.addClass( 'css-view-box-short' );
-        this.workspace.addClass( 'workspace-short' );
-        this.setElStartPoint();
-        this.setElParams( this.model.get( 'rect' ).w, this.model.get( 'rect' ).h );
-        this.setCSSScrollPane();
-        Sprite.Collection.CanvasElements.each( function( model ) {
-            model.trigger( 'set_short_state' );
-        });
-    },
-
-    setCSSPanelDefaultState: function() {
-        this.cssBox.removeClass( 'css-view-box-short' );
-        this.workspace.removeClass( 'workspace-short' );
-        this.setElStartPoint();
-        this.setElParams( this.model.get( 'rect' ).w, this.model.get( 'rect' ).h );
-        this.setCSSScrollPane();
-        Sprite.Collection.CanvasElements.each( function( model ) {
-            model.trigger( 'set_default_state' );
-        });
-    },
-
-    onCSSElClick: function( el ) {
-        var $el = $( el ), id = $el.data( 'id' );
-        
-        this.sldCSSEl.removeClass( 'css-element-selected' );
-        this.sldCSSEl = $el.addClass( 'css-element-selected' );
-
-        this.sldCanvasEl.removeClass( 'canvas-element-selected' );
-        this.sldCanvasEl = this.$el.find( '.canvas-element[data-id="' + id + '"]' ).addClass( 'canvas-element-selected' );
-    }, 
 
     onCanvasElClick: function( el ) {
         var $el = $( el ), id = $el.data( 'id' );
 
         this.sldCanvasEl.removeClass( 'canvas-element-selected' );
         this.sldCanvasEl = $el.addClass( 'canvas-element-selected' );
-
-        this.sldCSSEl.removeClass( 'css-element-selected' );
-        this.sldCSSEl = this.cssInner.find( '.css-element[data-id="' + id + '"]' ).addClass( 'css-element-selected' );
+        this.CSSPanel.selectEl( id );
     },
 
     setElStartPoint: function() {
@@ -329,18 +231,8 @@ Sprite.View.Document = Backbone.View.extend({
     },
 
     onWinResize: function() {
-        this.setCSSScrollHeight( this.win.height() - this.cssDesc.height() );
-        this.setCSSScrollPane();
-    },
-
-    setCSSScrollHeight: function( h ) {
-        this.cssScroll.height( h );
-    },
-
-    setCSSScrollPane: function() {
-        this.cssScroll.jScrollPane({
-            verticalGutter: 0
-        });
+        this.CSSPanel.setCSSScrollHeight( this.win.height() - this.CSSPanel.cssDesc.height() );
+        this.CSSPanel.setCSSScrollPane();
     },
 
     createSpriteElHandler: function( modelParams ) {
@@ -381,8 +273,8 @@ Sprite.View.Document = Backbone.View.extend({
         cssElView.render();
 
         this.canvasElZone.append( canvasElView.el );
-        this.cssInner.append( cssElView.el );
-        this.setCSSScrollPane();
+        this.CSSPanel.appendEl( cssElView.el );
+        this.CSSPanel.setCSSScrollPane();
     },
 
     nullfunc: function( e ) {
@@ -400,7 +292,7 @@ Sprite.View.Document = Backbone.View.extend({
         this.OuterCanvas.setElParams( w, h ).render();
         this.Resize.setElParams( w, h );
         Sprite.Collection.CanvasElements.remove( Sprite.Collection.CanvasElements.toArray() );
-        this.setCSSScrollPane();
+        this.CSSPanel.setCSSScrollPane();
     },
 
     onSelectFiles: function( e ) {
