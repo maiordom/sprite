@@ -30,13 +30,17 @@ Sprite.View.Document = Backbone.View.extend({
     readStorage: function() {
         var self = this, queue = [];
 
-        this.model.readElsInStorage( function( modelData ) {
+        if ( this.model.getDataFromStorage( 'css_panel_state' ) === 'short' ) {
+            this.CSSPanel.setCSSPanelShortState();
+        }
+
+        this.model.readElsFromStorage( function( modelData ) {
             queue.push( self.createSpriteElHandler( modelData ) );
         });
 
         this.readQueue( queue );
 
-        this.model.readParamsInStorage( function( w, h ) {
+        this.model.getBoxSize( function( w, h ) {
             self.setElParams( w, h );
             self.InnerCanvas.setElParams( w, h ).render();
             self.OuterCanvas.setElParams( w, h ).render();
@@ -81,7 +85,10 @@ Sprite.View.Document = Backbone.View.extend({
             self.setElParams( w, h );
             self.InnerCanvas.setElParams( w, h ).render();
             self.OuterCanvas.setElParams( w, h ).render();
-            self.model.setParamsInStorage( w, h );
+            self.model.setDataToStorage({
+                width: w,
+                height: h
+            });
         });
 
         /* generate CSSPanel */
@@ -109,12 +116,16 @@ Sprite.View.Document = Backbone.View.extend({
         this.win.on( 'resize', _.bind( this.onWinResize, this ) );
 
         $( document ).on ( $.browser.opera ? 'keypress' : 'keydown', function( e ) {
-            if ( e.keyCode === 46 && self.sldCanvasEl.length ) {
-                var id = self.sldCanvasEl.attr( 'data-id' ),
-                    elModel = Sprite.Collection.CanvasElements.get( id );
+            if ( !self.sldCanvasEl.length ) {
+                return;
+            }
 
-                Sprite.Collection.CanvasElements.remove( elModel );
-                self.CSSPanel.setCSSScrollPane();
+            switch ( e.keyCode ) {
+                case 46: self.CSSPanel.removeSelectedCSSEl(); break;
+                case 37: self.moveCanvasElByKeypress( -1, 0  ); break;
+                case 38: self.moveCanvasElByKeypress(  0, -1  ); break;
+                case 39: self.moveCanvasElByKeypress(  1, 0  ); break;
+                case 40: self.moveCanvasElByKeypress(  0, 1 ); break;
             }
         });
     },
@@ -135,25 +146,32 @@ Sprite.View.Document = Backbone.View.extend({
 
     bindCanvasElEvents: function( self ) {
         this.$el.on( 'mousedown', '.canvas-element', function( e ) {
-            self.onCanvasElClick( this );
-            self.dragEngine( self.sldCanvasEl, e );
+            self.dragEngine( e );
         });
 
         this.$el.on( 'click', '.canvas-element', function() {
             self.onCanvasElClick( this );
         });
 
-        this.$el.on( 'mouseenter', '.canvas-element', function() {
-            var el = $( this ), id = el.data( 'id');
-            el.addClass( 'canvas-element-hover' );
-            self.CSSPanel.setHoverStateToEl( id );
+        this.$el.on( 'mouseenter', '.canvas-element', function( e ) {
+            self.setHoverStateToEl( e );
         });
 
-        this.$el.on( 'mouseleave', '.canvas-element', function() {
-            var el = $( this ), id = el.data( 'id' );
-            el.removeClass( 'canvas-element-hover' );
-            self.CSSPanel.setUnhoverStateToEl( id );
+        this.$el.on( 'mouseleave', '.canvas-element', function( e ) {
+            self.setUnhoverStateToEl( e );
         });
+    },
+
+    setHoverStateToEl: function( e ) {
+        var el = $( e.currentTarget ), id = el.data( 'id');
+        el.addClass( 'canvas-element-hover' );
+        this.CSSPanel.setHoverStateToEl( id );
+    },
+
+    setUnhoverStateToEl: function( e ) {
+        var el = $( e.currentTarget ), id = el.data( 'id' );
+        el.removeClass( 'canvas-element-hover' );
+        this.CSSPanel.setUnhoverStateToEl( id );
     },
 
     onCanvasElClick: function( el ) {
@@ -179,10 +197,22 @@ Sprite.View.Document = Backbone.View.extend({
         this.model.set( 'rect', _( this.rect ).clone() );
     },
 
-    dragEngine: function( el, e ) {
-        var modelId = el.data( 'id' );
+    moveCanvasElByKeypress: function( offsetX, offsetY ) {
+        var id = this.sldCanvasEl.attr( 'data-id' ),
+            elModel = Sprite.Collection.CanvasElements.get( id ),
+            x = elModel.get( 'x' ),
+            y = elModel.get( 'y' );
 
-        this.dragObj.elModel = Sprite.Collection.CanvasElements.get( modelId ),
+        x += offsetX;
+        y += offsetY;
+        this.moveCanvasEl( x, y, elModel, this.rect );
+    },
+
+    dragEngine: function( e ) {
+        var id = $( e.currentTarget ).data( 'id' );
+
+        this.onCanvasElClick( e.currentTarget );
+        this.dragObj.elModel = Sprite.Collection.CanvasElements.get( id );
         this.dragObj.mouseOffset = {
             x: e.pageX - this.rect.x - this.dragObj.elModel.get( 'x' ),
             y: e.pageY - this.rect.y - this.dragObj.elModel.get( 'y' )
@@ -199,9 +229,14 @@ Sprite.View.Document = Backbone.View.extend({
 
     dragMove: function( e, mouseOffset, elModel ) {
         var rect = this.rect,
-            x = e.pageX - rect.x - mouseOffset.x,
-            y = e.pageY - rect.y - mouseOffset.y;
+            x    = e.pageX - rect.x - mouseOffset.x,
+            y    = e.pageY - rect.y - mouseOffset.y;
 
+        this.moveCanvasEl( x, y, elModel, rect );
+        this.nullfunc( e );
+    },
+
+    moveCanvasEl: function( x, y, elModel, rect ) {
         if ( x < 0 ) x = 0;
         if ( y < 0 ) y = 0;
         if ( x + elModel.get( 'w' ) > rect.w ) x = rect.w - elModel.get( 'w' );
@@ -210,9 +245,6 @@ Sprite.View.Document = Backbone.View.extend({
         elModel.set( 'x', x );
         elModel.set( 'y', y );
         elModel.trigger( 'dragmove' );
-
-        e.preventDefault();
-        e.stopPropagation();
     },
 
     onDragStart: function() {
@@ -274,6 +306,11 @@ Sprite.View.Document = Backbone.View.extend({
 
         this.canvasElZone.append( canvasElView.el );
         this.CSSPanel.appendEl( cssElView.el );
+
+        if ( this.model.isCSSPanelStateShort() ) {
+            cssElView.setShortState();
+        }
+
         this.CSSPanel.setCSSScrollPane();
     },
 

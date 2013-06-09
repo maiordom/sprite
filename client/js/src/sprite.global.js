@@ -15,10 +15,36 @@ Sprite.Global = Backbone.Model.extend({
         this.rect.h = h;
     },
 
+    setDataToStorage: function() {
+        if ( arguments.length === 1 && _( arguments[ 0 ] ).isObject() ) {
+            _( arguments[ 0 ] ).each( function( value, key ) {
+                localStorage.setItem( key, value );
+            });
+        } else if ( arguments.length === 2 ) {
+            localStorage.setItem( arguments[ 0 ], arguments[ 1 ] );
+        }
+    },
+
+    isCSSPanelStateShort: function() {
+        return this.getDataFromStorage( 'css_panel_state' ) === 'short';
+    },
+
+    getDataFromStorage: function( key ) {
+        return localStorage.getItem( key );
+    },
+
+    getBoxSize: function( callback ) {
+        var w = parseInt( localStorage[ 'width' ] ),
+            h = parseInt( localStorage[ 'height' ] );
+
+        w >= 0 && h >= 0 ? callback ( w, h ) : null;
+    },
+
     clearLocalStorage: function() {
         localStorage.removeItem( 'width'  );
         localStorage.removeItem( 'height' );
         localStorage.removeItem( 'sprite' );
+        localStorage.removeItem( 'css_panel_state' );
     },
 
     readFiles: function( files, x, y, callback, error ) {
@@ -57,7 +83,7 @@ Sprite.Global = Backbone.Model.extend({
         }
     },
 
-    readElsInStorage: function( callback ) {
+    readElsFromStorage: function( callback ) {
         var data = localStorage[ 'sprite' ];
         data = data ? JSON.parse( data ) : {};
 
@@ -80,17 +106,5 @@ Sprite.Global = Backbone.Model.extend({
             item.fileContent = 'server/cache/' + item.token + '.png';
             callback( item );
         });
-    },
-
-    readParamsInStorage: function( callback ) {
-        var w = parseInt( localStorage[ 'width' ] ),
-            h = parseInt( localStorage[ 'height' ] );
-
-        w >= 0 && h >= 0 ? callback ( w, h ) : null;
-    },
-
-    setParamsInStorage: function( w, h ) {
-        localStorage[ 'width' ]  = w;
-        localStorage[ 'height' ] = h;
     }
 });

@@ -57,9 +57,13 @@
             </div>
 
             <div class="canvas-box">
+
                 <div class="canvas-elements-wrapper">
                     <div class="canvas-elements-zone"></div>
                 </div>
+
+                <div class="canvas-fake-blocker"></div>
+
                 <div class="canvas-fake-box">
                     <div class="canvas-fake-border"></div>
                     <div class="canvas-fake-params"></div>
@@ -72,19 +76,19 @@
     </div>
 
     <script type="text/template" id="tmpl-css-element">
-    <div class="css-element-classname">
-        <span class="css-element-dot">.</span>
-        <span class="css-element-title"><%= name %></span>
-        <span class="css-element-brace-open">{</span>
-    </div>
-    <div class="css-element-clear"></div>
-    <% for ( var key in props ) { %>
-    <div class="css-element-pair css-element-pair-<%= key %>">
-        <span class="css-element-key"><%= key %>:</span>
-        <span class="css-element-value"><%= props[key] %>;</span>
-    </div>
-    <% } %>
-    <span class="css-element-brace-close">}</span>
+        <div class="css-element-classname">
+            <span class="css-element-dot">.</span>
+            <span class="css-element-title"><%= name %></span>
+            <span class="css-element-brace-open">{</span>
+        </div>
+        <div class="css-element-clear"></div>
+        <% for ( var key in props ) { %>
+        <div class="css-element-pair css-element-pair-<%= key %>">
+            <span class="css-element-key"><%= key %>:</span>
+            <span class="css-element-value"><%= props[key] %>;</span>
+        </div>
+        <% } %>
+        <span class="css-element-brace-close">}</span>
     </script>
 
     <!--

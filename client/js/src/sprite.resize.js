@@ -5,7 +5,7 @@ Sprite.View.Resize = Backbone.View.extend({
         minWidth: 50    
     },
     events: {
-        'mousedown': 'dragEngine',
+        'mousedown':  'dragEngine',
         'mouseenter': 'showParams',
         'mouseleave': 'hideParams'
     },
@@ -28,14 +28,15 @@ Sprite.View.Resize = Backbone.View.extend({
     },
 
     cacheObjects: function() {
-        this.doc        = $( document );
-        this.body       = $( 'body' );
-        this.fakeBox    = $( '.canvas-fake-box' );
-        this.fakeBorder = $( '.canvas-fake-border' );
-        this.fakeParams = $( '.canvas-fake-params' );
-        this.isDragged  = false;
-        this.isHover    = false;
-        this.rect       = this.model.toJSON().rect;
+        this.doc         = $( document );
+        this.body        = $( 'body' );
+        this.fakeBox     = $( '.canvas-fake-box' );
+        this.fakeBorder  = $( '.canvas-fake-border' );
+        this.fakeParams  = $( '.canvas-fake-params' );
+        this.fakeBlocker = $( '.canvas-fake-blocker' );
+        this.isDragged   = false;
+        this.isHover     = false;
+        this.rect        = this.model.toJSON().rect;
     },
 
     showParams: function() {
@@ -83,6 +84,7 @@ Sprite.View.Resize = Backbone.View.extend({
     },
 
     onDragStart: function() {
+        this.fakeBlocker.show();
         this.fakeBox.addClass( 'canvas-fake-active' );
         this.fakeBorder.show();
         this.body[ 0 ].style.cursor = 'nw-resize';
@@ -92,6 +94,7 @@ Sprite.View.Resize = Backbone.View.extend({
 
     onDragEnd: function() {
         !this.isHover ? this.fakeParams.hide() : null;
+        this.fakeBlocker.hide();
         this.fakeBox.removeClass( 'canvas-fake-active' );
         this.fakeBorder.hide();
         this.isDragged = false;

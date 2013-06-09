@@ -22,8 +22,16 @@ Sprite.View.CSSPanel = Backbone.View.extend({
         'blur .css-element-field':            'onFieldBlur',
         'mouseenter .css-element':            'onElMouseEnter',
         'mouseleave .css-element':            'onElMouseLeave',
-        'keypress .css-element-field':        'removeElByKeypress',
-        'keydown .css-element-field':         'removeElByKeypress'
+        'keypress .css-element-field':        'setNewElName',
+        'keydown .css-element-field':         'setNewElName'
+    },
+
+    removeSelectedCSSEl: function() {
+        var id = this.sldCSSEl.attr( 'data-id' ),
+            elModel = Sprite.Collection.CanvasElements.get( id );
+
+        Sprite.Collection.CanvasElements.remove( elModel );
+        this.setCSSScrollPane();
     },
 
     onElMouseLeave: function( e ) {
@@ -44,7 +52,7 @@ Sprite.View.CSSPanel = Backbone.View.extend({
         }
     },
 
-    removeElByKeypress: function( e ) {
+    setNewElName: function( e ) {
         if ( e.keyCode == 13 ) {
             var props = this.setCSSElClsName( e.currentTarget );
             this.changeCSSElClassName( props );
@@ -95,7 +103,8 @@ Sprite.View.CSSPanel = Backbone.View.extend({
 
     setCSSScrollPane: function() {
         this.cssScroll.jScrollPane({
-            verticalGutter: 0
+            verticalGutter: 0,
+            enableKeyboardNavigation: false
         });
     },
 
@@ -103,9 +112,10 @@ Sprite.View.CSSPanel = Backbone.View.extend({
         this.$el.addClass( 'css-view-box-short' );
         this.workspace.addClass( 'workspace-short' );
         this.model.trigger( 'change_panel_state' );
+        this.model.setDataToStorage( 'css_panel_state', 'short' );
         this.setCSSScrollPane();
-        Sprite.Collection.CanvasElements.each( function( model ) {
-            model.trigger( 'set_short_state' );
+        Sprite.Collection.CanvasElements.each( function( elModel ) {
+            elModel.trigger( 'set_short_state' );
         });
     },
 
@@ -113,9 +123,10 @@ Sprite.View.CSSPanel = Backbone.View.extend({
         this.$el.removeClass( 'css-view-box-short' );
         this.workspace.removeClass( 'workspace-short' );
         this.model.trigger( 'change_panel_state' );
+        this.model.setDataToStorage( 'css_panel_state', 'default' );
         this.setCSSScrollPane();
-        Sprite.Collection.CanvasElements.each( function( model ) {
-            model.trigger( 'set_default_state' );
+        Sprite.Collection.CanvasElements.each( function( elModel ) {
+            elModel.trigger( 'set_default_state' );
         });
     },
 
