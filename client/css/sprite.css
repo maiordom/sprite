@@ -374,6 +374,14 @@ BODY {
     max-width: 135px;
 }
 
+.css-panel-state-right {
+    display: none;
+}
+
+.css-view-box-short .css-panel-state-right {
+    display: block;
+}
+
 .css-view-box-short .css-description-header {
     font-size: 16px;
 }

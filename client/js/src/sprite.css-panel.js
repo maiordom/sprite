@@ -15,15 +15,15 @@ Sprite.View.CSSPanel = Backbone.View.extend({
     },
 
     events: {
-        'click .css-panel-state .icon-left':  'setCSSPanelShortState',
-        'click .css-panel-state .icon-right': 'setCSSPanelDefaultState',
-        'mousedown .css-element':             'onCSSElClick',
-        'click .css-element-classname':       'createCSSField',
-        'blur .css-element-field':            'onFieldBlur',
-        'mouseenter .css-element':            'onElMouseEnter',
-        'mouseleave .css-element':            'onElMouseLeave',
-        'keypress .css-element-field':        'setNewElName',
-        'keydown .css-element-field':         'setNewElName'
+        'click .css-panel-state-left':  'setCSSPanelShortState',
+        'click .css-panel-state-right': 'setCSSPanelDefaultState',
+        'mousedown .css-element':       'onCSSElClick',
+        'click .css-element-classname': 'createCSSField',
+        'blur .css-element-field':      'onFieldBlur',
+        'mouseenter .css-element':      'onElMouseEnter',
+        'mouseleave .css-element':      'onElMouseLeave',
+        'keypress .css-element-field':  'setNewElName',
+        'keydown .css-element-field':   'setNewElName'
     },
 
     removeSelectedCSSEl: function() {
@@ -115,10 +115,10 @@ Sprite.View.CSSPanel = Backbone.View.extend({
         this.workspace.addClass( 'workspace-short' );
         this.model.trigger( 'change_panel_state' );
         this.model.setDataToStorage( 'css_panel_state', 'short' );
-        this.setCSSScrollPane();
         Sprite.Collection.CanvasElements.each( function( elModel ) {
             elModel.trigger( 'set_short_state' );
         });
+        this.setCSSScrollPane();
     },
 
     setCSSPanelDefaultState: function() {
@@ -126,10 +126,10 @@ Sprite.View.CSSPanel = Backbone.View.extend({
         this.workspace.removeClass( 'workspace-short' );
         this.model.trigger( 'change_panel_state' );
         this.model.setDataToStorage( 'css_panel_state', 'default' );
-        this.setCSSScrollPane();
         Sprite.Collection.CanvasElements.each( function( elModel ) {
             elModel.trigger( 'set_default_state' );
         });
+        this.setCSSScrollPane();
     },
 
     onCSSElClick: function( e ) {
