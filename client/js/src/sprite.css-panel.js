@@ -59,6 +59,8 @@ Sprite.View.CSSPanel = Backbone.View.extend({
         } else if ( e.keyCode === 27 ) {
             this.setCSSElClsName( e.currentTarget, null );
         }
+
+        e.stopPropagation();
     },
 
     createCSSField: function( e ) {

@@ -45,6 +45,7 @@ Sprite.Global = Backbone.Model.extend({
         localStorage.removeItem( 'height' );
         localStorage.removeItem( 'sprite' );
         localStorage.removeItem( 'css_panel_state' );
+        localStorage.removeItem( 'selected_sprite_el' );
     },
 
     readFiles: function( files, x, y, callback, error ) {

@@ -5,6 +5,10 @@ Sprite.View.Document = Backbone.View.extend({
         'dragenter': 'nullfunc',
         'dragexit':  'nullfunc',
         'drop':      'onDropfunc',
+        'mousedown .canvas-element': 'dragEngine',
+        'click .canvas-element': 'selectCanvasEl',
+        'mouseenter .canvas-element': 'setHoverStateToEl',
+        'mouseleave .canvas-element': 'setUnhoverStateToEl'
     },
 
     initialize: function() {
@@ -38,7 +42,16 @@ Sprite.View.Document = Backbone.View.extend({
             queue.push( self.createSpriteElHandler( modelData ) );
         });
 
-        this.readQueue( queue );
+        this.readQueue( queue, function() {
+            var selectedSpriteElUuid = self.model.getDataFromStorage( 'selected_sprite_el' );
+
+            Sprite.Collection.CanvasElements.find( function( elModel ) {
+                if ( elModel.get( 'uuid' ) === selectedSpriteElUuid ) {
+                    self.selectCanvasElById( elModel.cid );
+                    self.CSSPanel.selectEl( elModel.cid );
+                }
+            });
+        });
 
         this.model.getBoxSize( function( w, h ) {
             self.setElParams( w, h );
@@ -76,89 +89,85 @@ Sprite.View.Document = Backbone.View.extend({
     bindEvents: function() {
         this.bindGlobalEvents( this );
         this.bindPanelEvents( this );
-        this.bindCanvasElEvents( this );
     },
 
     bindGlobalEvents: function( self ) {
-        /* generate Resize */
-        this.model.on( 'resize:canvas-box', function( w, h ) {
-            self.setElParams( w, h );
-            self.InnerCanvas.setElParams( w, h ).render();
-            self.OuterCanvas.setElParams( w, h ).render();
-            self.model.setDataToStorage({
-                width: w,
-                height: h
-            });
-        });
-
-        /* generate CSSPanel */
-        this.model.on( 'select_canvas_el', function( id ) {
-            self.sldCanvasEl.removeClass( 'canvas-element-selected' );
-            self.sldCanvasEl = self.$el.find( '.canvas-element[data-id="' + id + '"]' ).addClass( 'canvas-element-selected' );
-        });
-
-        /* generate CSSPanel */
-        this.model.on( 'canvas_element_hover', function( id ) {
-            self.canvasElZone.find( '.canvas-element[data-id="' + id + '"]' ).addClass( 'canvas-element-hover' );
-        });
-
-        /* generate CSSPanel */
-        this.model.on( 'canvas_element_unhover', function( id ) {
-            self.canvasElZone.find( '.canvas-element[data-id="' + id + '"]' ).removeClass( 'canvas-element-hover' );
-        });
-
-        /* generate CSSPanel */
-        this.model.on( 'change_panel_state', function() {
-            self.setElStartPoint();
-            self.setElParams( self.model.get( 'rect' ).w, self.model.get( 'rect' ).h );
-        });
+        this.model.on( 'resize:canvas-box',      _.bind( this.resizeSpriteWorkspace, this ) );
+        this.model.on( 'select_canvas_el',       _.bind( this.selectCanvasElById,    this ) );
+        this.model.on( 'canvas_element_hover',   _.bind( this.hoverCanvasElById,     this ) );
+        this.model.on( 'canvas_element_unhover', _.bind( this.unhoverCanvasElById,   this ) );
+        this.model.on( 'change_panel_state',     _.bind( this.recalcRectParams,      this ) );
 
         this.win.on( 'resize', _.bind( this.onWinResize, this ) );
 
         $( document ).on ( $.browser.opera ? 'keypress' : 'keydown', function( e ) {
-            if ( !self.sldCanvasEl.length ) {
-                return;
-            }
-
-            switch ( e.keyCode ) {
-                case 46: self.CSSPanel.removeSelectedCSSEl(); break;
-                case 37: self.moveCanvasElByKeypress( -1, 0  ); break;
-                case 38: self.moveCanvasElByKeypress(  0, -1  ); break;
-                case 39: self.moveCanvasElByKeypress(  1, 0  ); break;
-                case 40: self.moveCanvasElByKeypress(  0, 1 ); break;
-            }
+            self.listenKeypress( e );
         });
     },
 
     bindPanelEvents: function( self ) {
-        this.panel.on( 'change', '.btn-upload', function( e ) {
-            self.onSelectFiles( e );
-        });
+        this.panel.on( 'change', '.btn-upload',  _.bind( this.onSelectFiles, this ) );
+        this.panel.on( 'click', '.btn-download', _.bind( this.getSprite,     this ) );
+        this.panel.on( 'click', '.btn-new-doc',  _.bind( this.createNewDoc,  this ) );
+    },
 
-        this.panel.on( 'click', '.btn-download', function() {
-            Sprite.Collection.CanvasElements.createSprite( self.rect.w, self.rect.h );
-        });
+    getSprite: function() {
+        Sprite.Collection.CanvasElements.createSprite( this.rect.w, this.rect.h );
+    },
 
-        this.panel.on( 'click', '.btn-new-doc', function() {
-            self.createNewDoc();
+    recalcRectParams: function() {
+        this.setElStartPoint();
+        this.setElParams( this.model.get( 'rect' ).w, this.model.get( 'rect' ).h );
+    },
+
+    hoverCanvasElById: function( id ) {
+        this.canvasElZone.find( '.canvas-element[data-id="' + id + '"]' ).addClass( 'canvas-element-hover' );
+    },
+
+    unhoverCanvasElById: function( id ) {
+        this.canvasElZone.find( '.canvas-element[data-id="' + id + '"]' ).removeClass( 'canvas-element-hover' );
+    },
+
+    listenKeypress: function( e ) {
+        if ( !this.sldCanvasEl.length ) {
+            return;
+        }
+
+        switch ( e.keyCode ) {
+            case 46: this.CSSPanel.removeSelectedCSSEl();    break;
+            case 37: this.moveCanvasElByKeypress( -1, 0  );  break;
+            case 38: this.moveCanvasElByKeypress(  0, -1  ); break;
+            case 39: this.moveCanvasElByKeypress(  1, 0  );  break;
+            case 40: this.moveCanvasElByKeypress(  0, 1 );   break;
+        }
+    },
+
+    resizeSpriteWorkspace: function( w, h ) {
+        this.setElParams( w, h );
+        this.InnerCanvas.setElParams( w, h ).render();
+        this.OuterCanvas.setElParams( w, h ).render();
+        this.model.setDataToStorage({
+            width: w,
+            height: h
         });
     },
 
-    bindCanvasElEvents: function( self ) {
-        this.$el.on( 'mousedown', '.canvas-element', function( e ) {
-            self.dragEngine( e );
+    selectCanvasElById: function( id ) {
+        this.sldCanvasEl.removeClass( 'canvas-element-selected' );
+        this.sldCanvasEl = this.$el.find( '.canvas-element[data-id="' + id + '"]' ).addClass( 'canvas-element-selected' );
+        this.model.setDataToStorage({
+            selected_sprite_el: Sprite.Collection.CanvasElements.get( id ).get( 'uuid' )
         });
+    },
 
-        this.$el.on( 'click', '.canvas-element', function() {
-            self.onCanvasElClick( this );
-        });
+    selectCanvasEl: function( e ) {
+        var $el = $( e.currentTarget ), id = $el.data( 'id' );
 
-        this.$el.on( 'mouseenter', '.canvas-element', function( e ) {
-            self.setHoverStateToEl( e );
-        });
-
-        this.$el.on( 'mouseleave', '.canvas-element', function( e ) {
-            self.setUnhoverStateToEl( e );
+        this.sldCanvasEl.removeClass( 'canvas-element-selected' );
+        this.sldCanvasEl = $el.addClass( 'canvas-element-selected' );
+        this.CSSPanel.selectEl( id );
+        this.model.setDataToStorage({
+            selected_sprite_el: Sprite.Collection.CanvasElements.get( id ).get( 'uuid' )
         });
     },
 
@@ -172,14 +181,6 @@ Sprite.View.Document = Backbone.View.extend({
         var el = $( e.currentTarget ), id = el.data( 'id' );
         el.removeClass( 'canvas-element-hover' );
         this.CSSPanel.setUnhoverStateToEl( id );
-    },
-
-    onCanvasElClick: function( el ) {
-        var $el = $( el ), id = $el.data( 'id' );
-
-        this.sldCanvasEl.removeClass( 'canvas-element-selected' );
-        this.sldCanvasEl = $el.addClass( 'canvas-element-selected' );
-        this.CSSPanel.selectEl( id );
     },
 
     setElStartPoint: function() {
@@ -211,7 +212,7 @@ Sprite.View.Document = Backbone.View.extend({
     dragEngine: function( e ) {
         var id = $( e.currentTarget ).data( 'id' );
 
-        this.onCanvasElClick( e.currentTarget );
+        this.selectCanvasEl( e );
         this.dragObj.elModel = Sprite.Collection.CanvasElements.get( id );
         this.dragObj.mouseOffset = {
             x: e.pageX - this.rect.x - this.dragObj.elModel.get( 'x' ),
@@ -346,16 +347,17 @@ Sprite.View.Document = Backbone.View.extend({
         console.log( ans );
     },
 
-    readQueue: function( queue ) {
+    readQueue: function( queue, callback ) {
         var self = this;
 
         if ( !queue.length ) {
+            callback && callback();
             return false;
         }
 
         $.when( queue[ 0 ].apply( this ) ).always( function() {
             queue.splice( 0, 1 );
-            self.readQueue( queue );
+            self.readQueue( queue, callback );
         });
     },
 
