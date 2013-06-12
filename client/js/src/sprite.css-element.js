@@ -22,6 +22,10 @@ Sprite.View.CSSElement = Backbone.View.extend({
         this.model.on( 'set_default_state', function() {
             self.setDefaultState();
         });
+
+        this.model.on( 'onLoadFileError', function() {
+            self.$el.addClass( 'css-element-error' );
+        });
     },
 
     setShortState: function() {

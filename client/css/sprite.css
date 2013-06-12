@@ -274,6 +274,17 @@ BODY {
     filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#fff6d3', endColorstr='#ffe9aa',GradientType=0 ); /* IE6-9 */
 }
 
+.css-element-error {
+    background: rgb(30,87,153); /* Old browsers */
+    background: -moz-linear-gradient(top,  rgba(30,87,153,1) 0%, rgba(255,232,232,1) 0%, rgba(255,209,209,1) 100%); /* FF3.6+ */
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(30,87,153,1)), color-stop(0%,rgba(255,232,232,1)), color-stop(100%,rgba(255,209,209,1))); /* Chrome,Safari4+ */
+    background: -webkit-linear-gradient(top,  rgba(30,87,153,1) 0%,rgba(255,232,232,1) 0%,rgba(255,209,209,1) 100%); /* Chrome10+,Safari5.1+ */
+    background: -o-linear-gradient(top,  rgba(30,87,153,1) 0%,rgba(255,232,232,1) 0%,rgba(255,209,209,1) 100%); /* Opera 11.10+ */
+    background: -ms-linear-gradient(top,  rgba(30,87,153,1) 0%,rgba(255,232,232,1) 0%,rgba(255,209,209,1) 100%); /* IE10+ */
+    background: linear-gradient(to bottom,  rgba(30,87,153,1) 0%,rgba(255,232,232,1) 0%,rgba(255,209,209,1) 100%); /* W3C */
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#1e5799', endColorstr='#ffd1d1',GradientType=0 ); /* IE6-9 */
+}
+
 .css-element-dot {
     float: left;
 }
